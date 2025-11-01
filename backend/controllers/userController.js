@@ -51,9 +51,9 @@ const registerUser = async (req, res) => {
   }
 };
 
-// @desc Authenticate (log in) a user
-// @route POST /api/users/login
-// @access Public
+// @desc    Authenticate (log in) a user
+// @route   POST /api/users/login
+// @access  Public
 
 const loginUser = async (req, res) => {
   try {
@@ -76,8 +76,26 @@ const loginUser = async (req, res) => {
   }
 };
 
+// @desc   Get user profile
+// @route  GET /api/users/profile
+// @access Private
+const getUserProfile = async (req, res) => {
+  // req.user is set in the authMiddleware
+  if (req.user) {
+    res.status(200).json({
+      _id: req.user._id,
+      username: req.user.username,
+      email: req.user.email,
+    });
+  } else {
+    res.status(404).json({ message: "Usuario no encontrado."
+    })
+  }
+}
+
 // Export the controller functions
 module.exports = {
   registerUser,
   loginUser,
+  getUserProfile,
 };
