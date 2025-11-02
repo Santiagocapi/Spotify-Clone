@@ -13,7 +13,7 @@ const playlistSchema = new mongoose.Schema({
     required: true,
     ref: "User", // Reference to User model
   },
-  song: [ // [] because song are an array for IDs
+  songs: [ // [] because song are an array for IDs
     {
       type: mongoose.Schema.Types.ObjectId, // Id of the Song
       ref: "Song", // Reference to Song model
