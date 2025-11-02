@@ -14,6 +14,7 @@ This project is built using the MERN stack (MongoDB, Express, React, Node.js) al
 * **[Express.js](https://expressjs.com/)**
 * **[bcrypt.js](https://www.npmjs.com/package/bcryptjs)**: Library for encrypting ("hashing") passwords.
 * **[JSON Web Token (JWT)](https://jwt.io/)**: To generate secure "access tokens" for route authentication.
+* **[Multer](https://www.npmjs.com/package/multer)**: Middleware for handling file uploads (`multipart/form-data`).
 * **[dotenv](https://www.npmjs.com/package/dotenv)**: To handle environment variables (API keys, secrets).
 
 ### Database
@@ -23,7 +24,7 @@ This project is built using the MERN stack (MongoDB, Express, React, Node.js) al
 
 ### Frontend (Planned)
 
-* **[React.js](https://reactjs.org/)**:
+* **[React.js](https://reactjs.org/)**: JavaScript library for building the user interface.
 
 ### Development Tools
 
@@ -42,3 +43,8 @@ This project is built using the MERN stack (MongoDB, Express, React, Node.js) al
 * **User Authentication:**
     * `POST /api/users/register`: Registration of new users with encrypted password (bcrypt).
     * `POST /api/users/login`: User login and generation of "VIP pass" (JSON Web Token).
+* **Authorization Middleware:**
+    * Protected paths that only authenticated users (with a valid token) can access.
+* **Song Management:**
+    * `POST /api/songs/upload`: Protected endpoint for uploading `.mp3` files (using `multer`).
+    * `GET /api/songs`: Public endpoint for listing all songs in the database.
