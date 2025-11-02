@@ -34,7 +34,7 @@ This project is built using the MERN stack (MongoDB, Express, React, Node.js) al
 
 ---
 
-## ✅ Funcionalidades Implementadas (Backend)
+## Implemented Functionalities (Backend)
 
 * **REST API Server** with Node.js Express.
 * **Database Connection** NoSQL (MongoDB Atlas).
