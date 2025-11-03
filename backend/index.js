@@ -5,6 +5,7 @@ const connectDB = require('./config/db');
 // Routes
 const userRoutes = require('./routes/userRoutes');
 const songRoutes = require('./routes/songRoutes');
+const playlistRoutes = require('./routes/playlistRoutes');
 
 // Load environment variables from .env file
 dotenv.config();
@@ -22,6 +23,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Principal routes
 app.use('/api/users', userRoutes); // Use user routes for /api/users endpoint
 app.use('/api/songs', songRoutes); // Use song routes for /api/songs endpoint
+app.use('/api/playlists', playlistRoutes); // Use playlist routes for /api/playlists endpoint
 
 // Start the server
 app.get('/', (req, res) => {
