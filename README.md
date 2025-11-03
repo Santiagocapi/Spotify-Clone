@@ -37,14 +37,31 @@ This project is built using the MERN stack (MongoDB, Express, React, Node.js) al
 
 ## Implemented Functionalities (Backend)
 
-* **REST API Server** with Node.js Express.
-* **Database Connection** NoSQL (MongoDB Atlas).
+* **REST API Server** with `Node.js` and `Express`.
+* **Database Connection** NoSQL (`MongoDB Atlas`).
 * **Data Modeling** with Mongoose (Users, Songs, Playlists).
 * **User Authentication:**
-    * `POST /api/users/register`: Registration of new users with encrypted password (bcrypt).
-    * `POST /api/users/login`: User login and generation of "VIP pass" (JSON Web Token).
+    * `POST /api/users/register`: Registration of new users with encrypted password (using `bcrypt`).
+    * `POST /api/users/login`: User login and generation of "VIP pass" (using `JSON Web Token`).
 * **Authorization Middleware:**
     * Protected paths that only authenticated users (with a valid token) can access.
 * **Song Management:**
     * `POST /api/songs/upload`: Protected endpoint for uploading `.mp3` files (using `multer`).
     * `GET /api/songs`: Public endpoint for listing all songs in the database.
+* **Playlist Management:**
+    * `POST /api/playlists`: Protected endpoint to create a new playlist.
+    * `GET /api/playlists/my`: Protected endpoint to retrieve all playlists of the logged-in user.
+    * `PUT /api/playlists/:id/add`: Protected endpoint to add a song to a user's playlist.
+
+---
+
+## Next Steps (Roadmap)
+
+* **Frontend with React**
+    * Initialize the React project in the `/frontend` folder.
+    * Create Registration and Login pages.
+    * Create the main application layout.
+    * Consume the backend API to display songs and playlists.
+* **Backend V2**
+    * Implement audio streaming by track ranges (instead of serving the entire file).
+    * Implement the option for public/private playlists.
