@@ -1,10 +1,16 @@
-import './index.css'
+import React from 'react';
+import { Outlet } from 'react-router-dom';
 
 function App() {
   return (
     <div>
-      <h1> Hola React</h1>
-      <p>El frontend esta funcionando</p>
+      <header className="app-header">
+        <h1>Spotify Clone</h1>
+      </header>
+
+      <main className="main-content">
+        <Outlet />
+      </main>
     </div>
   );
 }
