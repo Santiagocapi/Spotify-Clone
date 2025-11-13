@@ -3,7 +3,7 @@
 // import the "hooks" we need
 import React, { useState } from "react";
 // "useNavigate" is the hook that allows us to redirect the user
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 // import axios (our API "messenger")
 import axios from "axios";
