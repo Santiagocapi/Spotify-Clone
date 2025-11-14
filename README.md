@@ -25,6 +25,9 @@ This project is built using the MERN stack (MongoDB, Express, React, Node.js) al
 ### Frontend (Planned)
 
 * **[React.js](https://reactjs.org/)**: JavaScript library for building the user interface.
+* **[React Router Dom](https://reactrouter.com/)**: For customer-side routing (SPA).
+* **[Axios](https://axios-http.com/)**: HTTP client to consume the backend API.
+* **CSS Modules**: For "scoped" (local) styles per component. (For now)
 
 ### Development Tools
 
@@ -53,6 +56,19 @@ This project is built using the MERN stack (MongoDB, Express, React, Node.js) al
     * `GET /api/playlists/my`: Protected endpoint to retrieve all playlists of the logged-in user.
     * `PUT /api/playlists/:id/add`: Protected endpoint to add a song to a user's playlist.
 
+### Frontend (In Progress)
+
+* **Project Setup** with Vite and React.
+* **Routing**: Configuration of `react-router-dom` with a main layout (`App.jsx`) and nested routes (`Home`, `Login`, `Register`).
+* **Authentication Forms**:
+    * `Register.jsx` component with `useState` and `axios` to connect to the backend.
+    * `Login.jsx` component with `useState` and `axios`.
+* **Global Authentication State**:
+    * Created using `AuthContext.jsx` with `useReducer` and `useContext`.
+    * The app is "wrapped" within the `AuthProvider`.
+    * Login updates the global state and saves it to `localStorage`.
+    * The app reads `localStorage` on startup to keep the user logged in.
+
 ---
 
 ## Next Steps (Roadmap)
@@ -62,6 +78,7 @@ This project is built using the MERN stack (MongoDB, Express, React, Node.js) al
     * Create Registration and Login pages.
     * Create the main application layout.
     * Consume the backend API to display songs and playlists.
-* **Backend V2**
+
+* **Backend V2** (Optional)
     * Implement audio streaming by track ranges (instead of serving the entire file).
     * Implement the option for public/private playlists.
