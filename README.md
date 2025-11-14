@@ -73,11 +73,15 @@ This project is built using the MERN stack (MongoDB, Express, React, Node.js) al
 
 ## Next Steps (Roadmap)
 
-* **Frontend with React**
-    * Initialize the React project in the `/frontend` folder.
-    * Create Registration and Login pages.
-    * Create the main application layout.
-    * Consume the backend API to display songs and playlists.
+* **Frontend**
+* **Frontend - Authentication:**
+    * Create Protected Routes (so that only logged-in users see `Home`).
+    * Show/hide Login/Register and Logout links in the header (`App.jsx`) based on the global state.
+* **Frontend - Home:**
+    * Consume the API to display the song list (`GET /api/songs`).
+    * Consume the API to display the user's playlists (`GET /api/playlists/my`).
+* **Frontend - Components:**
+    * Build the audio player component (`<audio>`).
 
 * **Backend V2** (Optional)
     * Implement audio streaming by track ranges (instead of serving the entire file).
