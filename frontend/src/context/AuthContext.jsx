@@ -5,7 +5,7 @@ export const authReducer = (state, action) => {
   switch (action.type) {
     case "LOGIN":
       return { user: action.payload }; // The payload will be the object { email, token }
-    case "LOGUOT":
+    case "LOGOUT":
       return { user: null };
     default:
       return state;
@@ -25,14 +25,14 @@ export const AuthProvider = ({ children }) => {
   // Keep the user logged in if the page reloads
   // This 'useEffect' is executed ONLY ONCE when the app loads
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user'));
+    const user = JSON.parse(localStorage.getItem("user"));
 
     if (user) {
-        dispatch({ type: 'LOGIN', payload: user });
+      dispatch({ type: "LOGIN", payload: user });
     }
-  }, []) // The empty '[]' means "run only on mount"
+  }, []); // The empty '[]' means "run only on mount"
 
-  console.log('AuthContext state:', state);
+  console.log("AuthContext state:", state);
 
   return (
     <AuthContext.Provider value={{ ...state, dispatch }}>
@@ -41,15 +41,13 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-
-
 // We created a "shortcut" so we don't have to import 'useContext' and 'AuthContext'
 // everywhere. From now on, we'll only import 'useAuthContext()'.
 export const useAuthContext = () => {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw Error('useAuthContext debe usarse dentro de un AuthProvider');
+    throw Error("useAuthContext debe usarse dentro de un AuthProvider");
   }
 
   return context;

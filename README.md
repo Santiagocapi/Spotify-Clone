@@ -73,7 +73,6 @@ This project is built using the MERN stack (MongoDB, Express, React, Node.js) al
 
 ## Next Steps (Roadmap)
 
-* **Frontend**
 * **Frontend - Authentication:**
     * Create Protected Routes (so that only logged-in users see `Home`).
     * Show/hide Login/Register and Logout links in the header (`App.jsx`) based on the global state.
