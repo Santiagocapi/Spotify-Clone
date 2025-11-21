@@ -5,7 +5,7 @@ import styles from "./Home.module.css";
 import { useAuthContext } from "../context/AuthContext";
 
 function Home() {
-  // State to save the songs we bring from the backend
+  // State to save the songs and playlists we bring from the backend
   const [songs, setSongs] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   // Status to know if we are loading
