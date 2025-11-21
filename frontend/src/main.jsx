@@ -8,6 +8,7 @@ import App from "./App.jsx";
 import Home from "./views/Home.jsx";
 import Login from "./views/Login.jsx";
 import Register from "./views/Register.jsx";
+import UploadSong from "./views/UploadSong.jsx";
 
 // Import Context
 import { AuthProvider } from "./context/AuthContext.jsx";
@@ -29,6 +30,10 @@ const router = createBrowserRouter([
           {
             path: "/",
             element: <Home />,
+          },
+          {
+            path: "/upload",
+            element: <UploadSong />,
           },
           // Playlists
         ],

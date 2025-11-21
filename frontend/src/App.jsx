@@ -41,6 +41,21 @@ function App() {
               <span>
                 Hola, <strong>{user.email}</strong>
               </span>
+              <Link
+                to="/upload"
+                style={{
+                  padding: "3px 8px",
+                  cursor: "pointer",
+                  textDecoration: "none",
+                  background: "#1db954",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  fontWeight: "500",
+                }}
+              >
+                Subir Música
+              </Link>
               <button
                 onClick={handleLogout}
                 style={{
@@ -50,6 +65,7 @@ function App() {
                   color: "white",
                   border: "none",
                   borderRadius: "4px",
+                  fontWeight: "500",
                 }}
               >
                 Cerrar Sesión
