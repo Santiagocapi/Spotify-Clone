@@ -9,6 +9,7 @@ import Home from "./views/Home.jsx";
 import Login from "./views/Login.jsx";
 import Register from "./views/Register.jsx";
 import UploadSong from "./views/UploadSong.jsx";
+import CreatePlaylist from "./views/CreatePlaylist.jsx";
 
 // Import Context
 import { AuthProvider } from "./context/AuthContext.jsx";
@@ -35,7 +36,10 @@ const router = createBrowserRouter([
             path: "/upload",
             element: <UploadSong />,
           },
-          // Playlists
+          {
+            path: "/create-playlist",
+            element: <CreatePlaylist />,
+          },
         ],
       },
 
