@@ -5,6 +5,7 @@ const {
   createPlaylist,
   getUserPlaylists,
   addSongToPlaylist,
+  getPlaylistById,
 } = require("../controllers/playlistController");
 
 // ROUTES
