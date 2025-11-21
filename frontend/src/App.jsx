@@ -56,6 +56,17 @@ function App() {
               >
                 Subir Música
               </Link>
+              <Link
+                to="/create-playlist"
+                style={{
+                  marginRight: "20px",
+                  color: "#1db954",
+                  textDecoration: "none",
+                  fontWeight: "bold",
+                }}
+              >
+                Crear Playlist
+              </Link>
               <button
                 onClick={handleLogout}
                 style={{
