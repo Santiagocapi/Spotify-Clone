@@ -111,9 +111,69 @@ const getPlaylistById = async (req, res) => {
   }
 };
 
+// @desc    Delete a song from a playlist
+// @route   PUT /api/playlists/:id/remove
+// @access  Private
+
+const removeSongFromPlaylist = async (req, res) => {
+  try {
+    const { songId } = req.body;
+    const { id: playlistId } = req.params;
+
+    const playlist = await Playlist.findById(playlistId);
+
+    if (!playlist) {
+      return res.status(404).json({ message: "Playlist no encontrada" });
+    }
+
+    // Check if the user is the owner of the playlist
+    if (playlist.owner.toString() !== req.user._id.toString()) {
+      return res
+        .status(403)
+        .json({ message: "Acceso denegado: no eres el dueño de la playlist" });
+    }
+
+    // Filter the array of songs to remove the song with the given ID
+    playlist.songs = playlist.songs.filter(
+      (song) => song.toString() !== songId
+    );
+
+    await playlist.save();
+    res.status(200).json(playlist);
+  } catch (error) {
+    res.status(500).json({ message: `Error del servidor: ${error.message}` });
+  }
+};
+
+// @desc    Delete a playlist
+// @route   DELETE /api/playlists/:id
+// @access  Private
+const deletePlaylist = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const playlist = await Playlist.findById(id);
+
+    if (!playlist) {
+      return res.status(404).json({ message: "Playlist no encontrada" });
+    }
+
+    // Check if the user is the owner
+    if (playlist.owner.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "No autorizado" });
+    }
+
+    await playlist.deleteOne();
+    res.status(200).json({ message: "Playlist eliminada correctamente" });
+  } catch (error) {
+    res.status(500).json({ message: `Error del servidor: ${error.message}` });
+  }
+};
+
 module.exports = {
   createPlaylist,
   getUserPlaylists,
   addSongToPlaylist,
   getPlaylistById,
+  removeSongFromPlaylist,
+  deletePlaylist,
 };
