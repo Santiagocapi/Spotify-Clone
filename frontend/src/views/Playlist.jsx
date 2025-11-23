@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { useParams } from "react-router-dom"; // To read the id from the URL
+import { Link, useParams, useNavigate } from "react-router-dom"; // useParams - To read the id from the URL,
+// useNavigate - To redirect when delete a playlist
 import axios from "axios";
 import { useAuthContext } from "../context/AuthContext";
 import styles from "./Home.module.css"; // Reuse the styles
@@ -8,6 +8,7 @@ import styles from "./Home.module.css"; // Reuse the styles
 function Playlist() {
   const { id } = useParams();
   const { user } = useAuthContext();
+  const navigate = useNavigate();
 
   const [playlist, setPlaylist] = useState(null);
   const [allSongs, setAllSongs] = useState([]); // Songs list and add songs
@@ -41,7 +42,7 @@ function Playlist() {
     }
   }, [id, user]);
 
-  // Function to add songs to the playlist
+  // Function to Add Songs
   const handleAddSong = async (songId) => {
     try {
       // We make the GET request to our backend to add the song to the playlist
@@ -57,11 +58,47 @@ function Playlist() {
     }
   };
 
-  if (loading)
-    return <div className={styles.loading}>Cargando playlist...</div>;
+  // Function to Delete Song
+  const handleRemoveSong = async (songId) => {
+    if (!window.confirm("¿Quitar esta canción de la lista?")) return;
+
+    try {
+      await axios.put(
+        `/api/playlists/${id}/remove`,
+        { songId },
+        {
+          headers: { Authorization: `Bearer ${user.token}` },
+        }
+      );
+
+      // Update the playlist in the screen with the response from the server
+      const res = await axios.get(`/api/playlists/${id}`, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      setPlaylist(res.data);
+    } catch (err) {
+      alert(err.response?.data?.message || "Error al quitar canción");
+    }
+  };
+
+  // Funciont to Delete Playlist
+  const handleDeletePlaylist = async () => {
+    if (!window.confirm("¿Estás seguro de eliminar esta playlist entera?"))
+      return;
+
+    try {
+      await axios.delete(`/api/playlists/${id}`, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      navigate("/"); // Back to home
+    } catch (err) {
+      alert(err.response?.data?.message || "Error al eliminar playlist");
+    }
+  };
+
+  if (loading) return <div className={styles.loading}>Cargando...</div>;
   if (error) return <div className={styles.loading}>{error}</div>;
-  if (!playlist)
-    return <div className={styles.loading}>Playlist no encontrada</div>;
+  if (!playlist) return <div className={styles.loading}>No encontrada</div>;
 
   // Filter songs to no repeat them
   const songsToAdd = allSongs.filter(
@@ -89,28 +126,47 @@ function Playlist() {
           paddingBottom: "20px",
         }}
       >
-        <h1 style={{ fontSize: "3rem", marginBottom: "10px", color: "#333" }}>
-          {playlist.name}
-        </h1>
-        <p style={{ color: "#666" }}>{playlist.songs.length} Canciones</p>
+        <div>
+          <h1 style={{ fontSize: "3rem", marginBottom: "10px", color: "#333" }}>
+            {playlist.name}
+          </h1>
+          <p style={{ color: "#666" }}>{playlist.songs.length} Canciones</p>
+        </div>
 
-        {/* Button to open the add menu */}
+        {/* Button to delete playlist */}
         <button
-          onClick={() => setShowAddSection(!showAddSection)}
+          onClick={handleDeletePlaylist}
           style={{
             marginTop: "15px",
-            padding: "10px 20px",
-            backgroundColor: showAddSection ? "#ccc" : "#1db954",
+            backgroundColor: "#ff4444",
             color: "white",
             border: "none",
-            borderRadius: "20px",
+            padding: "10px 15px",
+            borderRadius: "5px",
             cursor: "pointer",
             fontWeight: "bold",
           }}
         >
-          {showAddSection ? "Cerrar menú de agregar" : "Agregar Canciones"}
+          Eliminar Playlist
         </button>
       </div>
+
+      {/* Button to open the add menu */}
+      <button
+        onClick={() => setShowAddSection(!showAddSection)}
+        style={{
+          margin: "15px 0",
+          padding: "10px 15px",
+          backgroundColor: showAddSection ? "#ccc" : "#1db954",
+          color: "white",
+          border: "none",
+          borderRadius: "5px",
+          cursor: "pointer",
+          fontWeight: "bold",
+        }}
+      >
+        {showAddSection ? "Cerrar menú de agregar" : "Agregar Canciones"}
+      </button>
 
       {/* --- ADD MENU (visible if showAddSection is TRUE) --- */}
       {showAddSection && (
@@ -168,9 +224,26 @@ function Playlist() {
       {playlist.songs.length === 0 ? (
         <p>Esta playlist está vacía.</p>
       ) : (
-        <div className={styles.grid}>
+        <div
+          className={styles.grid}
+          style={{
+            marginTop: "20px",
+          }}
+        >
           {playlist.songs.map((song) => (
             <div key={song._id} className={styles.card}>
+              {/* Button to remove song from playlist */}
+              <button
+                onClick={() => handleRemoveSong(song._id)}
+                className={styles.addButton}
+                style={{
+                  background: "#ff4444",
+                  fontSize: "1rem",
+                }}
+                title="Quitar de la playlist"
+              >
+                X
+              </button>
               <div
                 style={{
                   height: "120px",
