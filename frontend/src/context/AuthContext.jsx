@@ -1,4 +1,10 @@
-import React, { createContext, useReducer, useContext, useEffect } from "react";
+import React, {
+  createContext,
+  useReducer,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 // This function decides HOW the state changes
 export const authReducer = (state, action) => {
@@ -22,6 +28,8 @@ export const AuthProvider = ({ children }) => {
     user: null, // The initial state is "nobody is logged in"
   });
 
+  const [loading, setLoading] = useState(true);
+
   // Keep the user logged in if the page reloads
   // This 'useEffect' is executed ONLY ONCE when the app loads
   useEffect(() => {
@@ -30,12 +38,23 @@ export const AuthProvider = ({ children }) => {
     if (user) {
       dispatch({ type: "LOGIN", payload: user });
     }
+
+    // finish loading if user is found or not
+    setLoading(false);
   }, []); // The empty '[]' means "run only on mount"
 
   console.log("AuthContext state:", state);
 
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", marginTop: "50px" }}>
+        Cargando autenticación...
+      </div>
+    );
+  }
+
   return (
-    <AuthContext.Provider value={{ ...state, dispatch }}>
+    <AuthContext.Provider value={{ ...state, dispatch, loading }}>
       {children}
     </AuthContext.Provider>
   );
