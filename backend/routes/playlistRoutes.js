@@ -22,4 +22,8 @@ router.get("/my", protect, getUserPlaylists);
 // PRIVATE
 router.put("/:id/add", protect, addSongToPlaylist);
 
+// GET /api/playlist/:id
+// PRIVATE
+router.get("/:id", protect, getPlaylistById);
+
 module.exports = router;

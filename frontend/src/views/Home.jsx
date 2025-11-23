@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import styles from "./Home.module.css";
 // Import the context to obtain the token
@@ -52,30 +53,36 @@ function Home() {
       <div className={styles.grid} style={{ marginBottom: "40px" }}>
         {playlists.length > 0 ? (
           playlists.map((playlist) => (
-            <div
+            <Link
+              to={`/playlist/${playlist._id}`}
               key={playlist._id}
-              className={styles.card}
-              style={{ backgroundColor: "#e6f7ff" }}
+              style={{ textDecoration: "none", color: "inherit" }}
             >
               <div
-                style={{
-                  height: "100px",
-                  background: "#b3e0ff",
-                  marginBottom: "10px",
-                  borderRadius: "4px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "30px",
-                }}
+                key={playlist._id}
+                className={styles.card}
+                style={{ backgroundColor: "#e6f7ff" }}
               >
-                💿
+                <div
+                  style={{
+                    height: "100px",
+                    background: "#b3e0ff",
+                    marginBottom: "10px",
+                    borderRadius: "4px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "30px",
+                  }}
+                >
+                  💿
+                </div>
+                <div className={styles.songTitle}>{playlist.name}</div>
+                <div className={styles.songArtist}>
+                  {playlist.songs.length} canciones
+                </div>
               </div>
-              <div className={styles.songTitle}>{playlist.name}</div>
-              <div className={styles.songArtist}>
-                {playlist.songs.length} canciones
-              </div>
-            </div>
+            </Link>
           ))
         ) : (
           <p>No tienes playlists creadas aún.</p>
