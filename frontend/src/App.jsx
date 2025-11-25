@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { Outlet, Link, useNavigate } from "react-router-dom";
 // Import our hooks
 import { useAuthContext } from "./context/AuthContext";
+import Player from "./components/Player";
 import "./index.css";
 
 function App() {
@@ -93,9 +94,12 @@ function App() {
         </nav>
       </header>
 
-      <main className="main-content">
+      <main className="main-content" style={{ paddingBottom: "100px" }}>
         <Outlet />
       </main>
+
+      {/* It will only be displayed if a song is selected (logic within Player) */}
+      <Player />
     </div>
   );
 }

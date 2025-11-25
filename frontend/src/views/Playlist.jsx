@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom"; // useParams - To read the id from the URL,
 // useNavigate - To redirect when delete a playlist
 import axios from "axios";
+// Context
 import { useAuthContext } from "../context/AuthContext";
+import { usePlayer } from "../context/PlayerContext";
 import styles from "./Home.module.css"; // Reuse the styles
 
 function Playlist() {
@@ -15,6 +17,8 @@ function Playlist() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddSection, setShowAddSection] = useState(false); // To show/hide the panel to add songs
+
+  const { playSong } = usePlayer();
 
   // Function to upload files (playlist and all the songs)
   useEffect(() => {
@@ -231,7 +235,11 @@ function Playlist() {
           }}
         >
           {playlist.songs.map((song) => (
-            <div key={song._id} className={styles.card}>
+            <div
+              key={song._id}
+              className={styles.card}
+              onClick={() => playSong(song)}
+            >
               {/* Button to remove song from playlist */}
               <button
                 onClick={() => handleRemoveSong(song._id)}
