@@ -14,6 +14,7 @@ import Playlist from "./views/Playlist.jsx";
 
 // Import Context
 import { AuthProvider } from "./context/AuthContext.jsx";
+import { PlayerProvider } from "./context/PlayerContext.jsx";
 
 // Import Guards
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -69,7 +70,9 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthProvider>
-      <RouterProvider router={router} />
+      <PlayerProvider>
+        <RouterProvider router={router} />
+      </PlayerProvider>
     </AuthProvider>
   </React.StrictMode>
 );

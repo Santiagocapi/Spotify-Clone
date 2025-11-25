@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import styles from "./Home.module.css";
-// Import the context to obtain the token
-import { useAuthContext } from "../context/AuthContext";
+
+// Import the context
+import { useAuthContext } from "../context/AuthContext"; // Get Token
+import { usePlayer } from "../context/PlayerContext"; // Play songs
 
 function Home() {
   // State to save the songs and playlists we bring from the backend
@@ -20,6 +22,8 @@ function Home() {
 
   // We use the context to obtain the user token
   const { user } = useAuthContext();
+  // Use the player context to play songs
+  const { playSong } = usePlayer();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -120,7 +124,11 @@ function Home() {
       <h2 className={styles.title}>Canciones Disponibles</h2>
       <div className={styles.grid}>
         {songs.map((song) => (
-          <div key={song._id} className={styles.card}>
+          <div
+            key={song._id}
+            className={styles.card}
+            onClick={() => playSong(song)}
+          >
             <button
               onClick={(e) => {
                 e.preventDefault();
