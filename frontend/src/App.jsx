@@ -3,7 +3,11 @@ import { Outlet, Link, useNavigate } from "react-router-dom";
 // Import our hooks
 import { useAuthContext } from "./context/AuthContext";
 import Player from "./components/Player";
+// Styles
 import "./index.css";
+import OurMusicLogo from "@/components/Logo";
+// Shadcn Styles
+import { Button } from "@/components/ui/button";
 
 function App() {
   const { user, dispatch } = useAuthContext();
@@ -24,81 +28,57 @@ function App() {
   };
 
   return (
-    <div>
-      <header className="app-header">
-        <h1>Spotify Clone</h1>
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
+      <header className="border-b border-border bg-background/80 p-4 flex justify-between items-center sticky top-0 z-50 backdrop-blur-xl">
+        <div className="flex items-center gap-3">
+          <OurMusicLogo className="fill-accent" />
+          <h1 className="text-2xl font-bold tracking-tight text-primary">
+            OurMusic
+          </h1>
+        </div>
 
-        {/* Conditional Render */}
-        <nav style={{ marginTop: "10px" }}>
+        <nav>
           {user ? (
-            <div
-              style={{
-                display: "flex",
-                gap: "20px",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <span>
-                Hola, <strong>{user.email}</strong>
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium text-muted-foreground">
+                Hola, <strong className="text-primary">{user.email}</strong>
               </span>
-              <Link
-                to="/upload"
-                style={{
-                  padding: "3px 8px",
-                  cursor: "pointer",
-                  textDecoration: "none",
-                  background: "#1db954",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  fontWeight: "500",
-                }}
-              >
-                Subir Música
+
+              <Link to="/upload">
+                <Button variant="ghost" className="hover:bg-accent">
+                  Subir Música
+                </Button>
               </Link>
-              <Link
-                to="/create-playlist"
-                style={{
-                  marginRight: "20px",
-                  color: "#1db954",
-                  textDecoration: "none",
-                  fontWeight: "bold",
-                }}
-              >
-                Crear Playlist
+
+              <Link to="/create-playlist">
+                <Button variant="ghost" className="hover:bg-accent">
+                  Crear Playlist
+                </Button>
               </Link>
-              <button
-                onClick={handleLogout}
-                style={{
-                  padding: "5px 10px",
-                  cursor: "pointer",
-                  background: "#ff5555",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  fontWeight: "500",
-                }}
-              >
-                Cerrar Sesión
-              </button>
+
+              <Button onClick={handleLogout} variant="destructive" size="sm">
+                Salir
+              </Button>
             </div>
           ) : (
-            <div
-              style={{ display: "flex", gap: "20px", justifyContent: "center" }}
-            >
-              <Link to="/login">Iniciar Sesión</Link>
-              <Link to="/register">Registrarse</Link>
+            <div className="flex gap-4">
+              <Link to="/login">
+                <Button variant="ghost" className="hover:bg-accent">
+                  Iniciar Sesión
+                </Button>
+              </Link>
+              <Link to="/register">
+                <Button className="rounded-full px-8">Registrarse</Button>
+              </Link>
             </div>
           )}
         </nav>
       </header>
 
-      <main className="main-content" style={{ paddingBottom: "100px" }}>
+      <main className="flex-1 p-6 max-w-7xl mx-auto w-full pb-24">
         <Outlet />
       </main>
 
-      {/* It will only be displayed if a song is selected (logic within Player) */}
       <Player />
     </div>
   );

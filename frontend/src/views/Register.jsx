@@ -4,12 +4,40 @@
 import React, { useState } from "react";
 // "useNavigate" is the hook that allows us to redirect the user
 import { useNavigate, Link } from "react-router-dom";
-
 // import axios (our API "messenger")
 import axios from "axios";
 
-// import our "scoped" styles (CSS Modules)
-import styles from "./Form.module.css";
+// UI Components (Shadcn UI)
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+// UI Icons (For now only svg, soon i will use lucide-react for real icons)
+const GoogleIcon = () => (
+  <svg
+    className="mr-2 h-4 w-4"
+    aria-hidden="true"
+    focusable="false"
+    data-prefix="fab"
+    data-icon="google"
+    role="img"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 488 512"
+  >
+    <path
+      fill="currentColor"
+      d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"
+    ></path>
+  </svg>
+);
 
 function Register() {
   // created a "state variable" for each input.
@@ -17,6 +45,7 @@ function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // initialize the "redirector"
   const navigate = useNavigate();
@@ -55,54 +84,103 @@ function Register() {
   };
 
   return (
-    <div className={styles.formContainer}>
-      <h2>Crear Cuenta</h2>
-      <form onSubmit={handleSubmit}>
-        {error && <p className={styles.formError}>{error}</p>}
+    <div className="flex items-center justify-center min-h-[80vh] bg-background p-4">
+      <Card className="w-full max-w-md shadow-lg border-border bg-card text-card-foreground">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-center tracking-tight">
+            Crea tu cuenta
+          </CardTitle>
+          <CardDescription className="text-center text-muted-foreground">
+            Ingresa tus datos para unirte a Spotify Clone
+          </CardDescription>
+        </CardHeader>
 
-        {/* input from username */}
-        <div className={styles.formGroup}>
-          <label htmlFor="username">Nombre de usuario</label>
-          <input
-            type="text"
-            id="username"
-            value={username}
-            // We call 'setUsername' to update the state, which causes the component to re-render.
-            onChange={(e) => setUsername(e.target.value)}
-          />
-        </div>
+        <CardContent className="grid gap-4">
+          {/* Botón decorativo de Google */}
+          <div className="grid grid-cols-1">
+            <Button
+              variant="outline"
+              className="w-full bg-background text-foreground border-input hover:bg-accent hover:text-accent-foreground"
+            >
+              <GoogleIcon />
+              Registrarse con Google
+            </Button>
+          </div>
 
-        {/* input from email */}
-        <div className={styles.formGroup}>
-          <label htmlFor="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">
+                O continúa con email
+              </span>
+            </div>
+          </div>
 
-        {/* input from password */}
-        <div className={styles.formGroup}>
-          <label htmlFor="password">Contraseña</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-destructive/15 text-destructive text-sm text-center font-medium p-3 rounded-md border border-destructive/20">
+                {error}
+              </div>
+            )}
 
-        <button type="submit" className={styles.formButton}>
-          Registrarse
-        </button>
+            <div className="space-y-2">
+              <Label htmlFor="username">Usuario</Label>
+              <Input
+                id="username"
+                placeholder="Tu nombre de usuario"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="bg-background border-input"
+              />
+            </div>
 
-        {/* the <Link> component belongs to the router, it's a <a> that doesn't reload the page */}
-        <Link to="/login" className={styles.formLink}>
-          ¿Ya tienes cuenta? Inicia sesión
-        </Link>
-      </form>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="nombre@ejemplo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-background border-input"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="bg-background border-input"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full font-bold"
+              disabled={loading}
+            >
+              {loading ? "Creando cuenta..." : "Registrarse"}
+            </Button>
+          </form>
+        </CardContent>
+
+        <CardFooter className="justify-center border-t border-border pt-6">
+          <p className="text-sm text-muted-foreground">
+            ¿Ya tienes una cuenta?{" "}
+            <Link
+              to="/login"
+              className="text-primary hover:underline font-medium"
+            >
+              Inicia sesión
+            </Link>
+          </p>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
