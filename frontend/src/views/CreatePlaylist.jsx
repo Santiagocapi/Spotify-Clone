@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuthContext } from "../context/AuthContext";
-import styles from "./Form.module.css"; // Reuse the styles
 
 function CreatePlaylist() {
   const [name, setName] = useState("");
