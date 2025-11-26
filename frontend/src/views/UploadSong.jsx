@@ -3,6 +3,19 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { useAuthContext } from "../context/AuthContext";
 
+// UI Components (Shadcn UI)
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
 function UploadSong() {
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
@@ -57,64 +70,88 @@ function UploadSong() {
   };
 
   return (
-    <div className={styles.formContainer}>
-      <h2>Subir Canción</h2>
+    <div className="flex items-center justify-center min-h-[80vh] p-4">
+      <Card className="w-full max-w-lg shadow-lg border-border bg-card">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center text-primary">
+            Subir Música
+          </CardTitle>
+          <CardDescription className="text-center text-muted-foreground">
+            Añade tus archivos MP3 a la biblioteca pública
+          </CardDescription>
+        </CardHeader>
 
-      <form onSubmit={handleSubmit}>
-        {error && <p className={styles.formError}>{error}</p>}
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-destructive/10 text-destructive text-sm text-center font-medium p-3 rounded-md border border-destructive/20">
+                {error}
+              </div>
+            )}
 
-        <div className={styles.formGroup}>
-          <label htmlFor="title">Título</label>
-          <input
-            type="text"
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ej. Billie Jean"
-          />
-        </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Título</Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Ej. Billie Jean"
+                  className="bg-background"
+                />
+              </div>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="artist">Artista</label>
-          <input
-            type="text"
-            id="artist"
-            value={artist}
-            onChange={(e) => setArtist(e.target.value)}
-            placeholder="Ej. Michael Jackson"
-          />
-        </div>
+              <div className="space-y-2">
+                <Label htmlFor="artist">Artista</Label>
+                <Input
+                  id="artist"
+                  value={artist}
+                  onChange={(e) => setArtist(e.target.value)}
+                  placeholder="Ej. Michael Jackson"
+                  className="bg-background"
+                />
+              </div>
+            </div>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="album">Álbum (Opcional)</label>
-          <input
-            type="text"
-            id="album"
-            value={album}
-            onChange={(e) => setAlbum(e.target.value)}
-            placeholder="Ej. Thriller"
-          />
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="album">Álbum (Opcional)</Label>
+              <Input
+                id="album"
+                value={album}
+                onChange={(e) => setAlbum(e.target.value)}
+                placeholder="Ej. Thriller"
+                className="bg-background"
+              />
+            </div>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="file">Archivo MP3</label>
-          <input
-            type="file"
-            id="file"
-            accept="audio/*" // Solo acepta audio
-            onChange={handleFileChange}
-          />
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="file">Archivo MP3</Label>
+              <Input
+                id="file"
+                type="file"
+                accept="audio/*"
+                onChange={handleFileChange}
+                className="bg-background cursor-pointer file:text-primary file:font-medium"
+              />
+            </div>
 
-        <button
-          type="submit"
-          className={styles.formButton}
-          disabled={loading} // Deshabilita el botón mientras sube
-          style={{ opacity: loading ? 0.7 : 1 }}
-        >
-          {loading ? "Subiendo..." : "Subir Canción"}
-        </button>
-      </form>
+            <div className="flex gap-3 pt-4">
+              <Link to="/" className="w-1/2">
+                <Button variant="outline" className="w-full" type="button">
+                  Cancelar
+                </Button>
+              </Link>
+              <Button
+                type="submit"
+                className="w-1/2 font-bold"
+                disabled={loading}
+              >
+                {loading ? "Subiendo..." : "Subir Canción"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

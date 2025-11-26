@@ -258,7 +258,7 @@ function Home() {
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded bg-muted">
-                        💿
+                        <Disc />
                       </div>
                       <div className="flex flex-col">
                         <span className="font-medium">{p.name}</span>
@@ -267,7 +267,9 @@ function Home() {
                         </span>
                       </div>
                     </div>
-                    <span className="text-xl text-muted-foreground">+</span>
+                    <span className="text-xl text-muted-foreground">
+                      <Plus className="h-5 w-5 transition-colors hover:text-primary" />
+                    </span>
                   </div>
                 ))}
               </div>

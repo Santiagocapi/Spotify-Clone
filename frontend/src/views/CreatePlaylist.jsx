@@ -1,7 +1,20 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { useAuthContext } from "../context/AuthContext";
+
+// UI Components (Shadcn UI)
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 function CreatePlaylist() {
   const [name, setName] = useState("");
@@ -45,28 +58,55 @@ function CreatePlaylist() {
   };
 
   return (
-    <div className={styles.formContainer}>
-      <h2>Nueva Playlist</h2>
+    <div className="flex items-center justify-center min-h-[60vh] p-4">
+      <Card className="w-full max-w-md shadow-lg border-border bg-card">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center text-primary">
+            Nueva Playlist
+          </CardTitle>
+          <CardDescription className="text-center text-muted-foreground">
+            Dale un nombre a tu nueva colección de canciones
+          </CardDescription>
+        </CardHeader>
 
-      <form onSubmit={handleSubmit}>
-        {error && <p className={styles.formError}>{error}</p>}
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-destructive/10 text-destructive text-sm text-center font-medium p-3 rounded-md border border-destructive/20">
+                {error}
+              </div>
+            )}
 
-        <div className={styles.formGroup}>
-          <label htmlFor="name">Nombre de la Playlist</label>
-          <input
-            type="text"
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Ej. Música para programar"
-            autoFocus // Auto focus on the input
-          />
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="name">Nombre</Label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ej. Música para programar"
+                autoFocus
+                className="bg-background focus:ring-primary"
+              />
+            </div>
 
-        <button type="submit" className={styles.formButton} disabled={loading}>
-          {loading ? "Creando..." : "Crear Playlist"}
-        </button>
-      </form>
+            <div className="flex gap-3 pt-2">
+              <Link to="/" className="w-1/2">
+                <Button variant="outline" className="w-full" type="button">
+                  Cancelar
+                </Button>
+              </Link>
+              <Button
+                type="submit"
+                className="w-1/2 font-bold"
+                disabled={loading}
+              >
+                {loading ? "Creando..." : "Crear Playlist"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
