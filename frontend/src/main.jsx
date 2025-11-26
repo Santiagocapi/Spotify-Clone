@@ -20,6 +20,9 @@ import { PlayerProvider } from "./context/PlayerContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import PublicRoute from "./components/PublicRoute.jsx";
 
+// UI Components (Shadcn UI)
+import { TooltipProvider } from "@/components/ui/tooltip";
+
 // Map
 const router = createBrowserRouter([
   {
@@ -71,7 +74,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthProvider>
       <PlayerProvider>
-        <RouterProvider router={router} />
+        <TooltipProvider delayDuration={0}>
+          <RouterProvider router={router} />
+        </TooltipProvider>
       </PlayerProvider>
     </AuthProvider>
   </React.StrictMode>
