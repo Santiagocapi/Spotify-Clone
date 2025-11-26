@@ -5,7 +5,6 @@ import axios from "axios";
 // Context
 import { useAuthContext } from "../context/AuthContext";
 import { usePlayer } from "../context/PlayerContext";
-import styles from "./Home.module.css"; // Reuse the styles
 
 function Playlist() {
   const { id } = useParams();

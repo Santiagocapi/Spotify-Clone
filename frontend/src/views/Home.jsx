@@ -1,11 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import styles from "./Home.module.css";
 
-// Import the context
+// Import the contexts
 import { useAuthContext } from "../context/AuthContext"; // Get Token
 import { usePlayer } from "../context/PlayerContext"; // Play songs
+
+// UI Components (Shadcn UI)
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+// Lucide React Icons
+import { PlusCircle, Music, Disc, Plus } from "lucide-react";
 
 function Home() {
   // State to save the songs and playlists we bring from the backend
@@ -17,7 +35,7 @@ function Home() {
   const [error, setError] = useState(null);
 
   // State to show the modal and the song to add
-  const [showModal, setShowModal] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [songToAdd, setSongToAdd] = useState(null);
 
   // We use the context to obtain the user token
@@ -54,7 +72,7 @@ function Home() {
   // Function to open the modal
   const openAddModal = (song) => {
     setSongToAdd(song);
-    setShowModal(true);
+    setIsModalOpen(true);
   };
 
   // Call the API to add songs
@@ -74,194 +92,193 @@ function Home() {
     }
   };
 
-  if (loading) return <div className={styles.loading}>Cargando música...</div>;
-  if (error) return <div className={styles.loading}>{error}</div>;
+  if (loading)
+    return (
+      <div className="flex h-full items-center justify-center p-10 text-muted-foreground">
+        Cargando tu biblioteca...
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="flex h-full items-center justify-center p-10 text-destructive">
+        {error}
+      </div>
+    );
 
   return (
-    <div className={styles.container}>
+    <div className="space-y-8 pb-20">
       {/* PLAYLIST SECTION */}
-      <h2 className={styles.title}>Mis Playlists</h2>
-      <div className={styles.grid} style={{ marginBottom: "40px" }}>
-        {playlists.length > 0 ? (
-          playlists.map((playlist) => (
-            <Link
-              to={`/playlist/${playlist._id}`}
-              key={playlist._id}
-              style={{ textDecoration: "none", color: "inherit" }}
-            >
-              <div
-                key={playlist._id}
-                className={styles.card}
-                style={{ backgroundColor: "#e6f7ff" }}
-              >
-                <div
-                  style={{
-                    height: "100px",
-                    background: "#b3e0ff",
-                    marginBottom: "10px",
-                    borderRadius: "4px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "30px",
-                  }}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
+            Tus Playlists
+          </h2>
+
+          {/* Button to create playlist */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link to="/create-playlist">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full h-8 w-8"
+                  title="Crear nueva playlist"
                 >
-                  💿
-                </div>
-                <div className={styles.songTitle}>{playlist.name}</div>
-                <div className={styles.songArtist}>
-                  {playlist.songs.length} canciones
-                </div>
-              </div>
-            </Link>
-          ))
+                  <PlusCircle className="h-4 w-4" />
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Crear nueva playlist</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+
+        {playlists.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {playlists.map((playlist) => (
+              <Link key={playlist._id} to={`/playlist/${playlist._id}`}>
+                <Card className="group relative h-full overflow-hidden border-none bg-muted/40 transition-all hover:bg-muted">
+                  <CardContent className="p-4">
+                    <div className="mb-4 flex aspect-square w-full items-center justify-center rounded-md bg-gradient-to-br from-primary/10 to-primary/5 shadow-sm">
+                      <Disc />
+                    </div>
+                    <h3 className="truncate font-semibold text-foreground">
+                      {playlist.name}
+                    </h3>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {playlist.songs.length} canciones
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
         ) : (
-          <p>No tienes playlists creadas aún.</p>
+          <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+            <p>Aún no tienes playlists creadas.</p>
+          </div>
         )}
-      </div>
+      </section>
 
       {/* SONGS SECTION */}
-      <h2 className={styles.title}>Canciones Disponibles</h2>
-      <div className={styles.grid}>
-        {songs.map((song) => (
-          <div
-            key={song._id}
-            className={styles.card}
-            onClick={() => playSong(song)}
-          >
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                openAddModal(song);
-              }}
-              className={styles.addButton}
-              title="Agregar a una playlist"
-            >
-              +
-            </button>
-            <div
-              style={{
-                height: "150px",
-                background: "#eee",
-                marginBottom: "10px",
-                borderRadius: "4px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "40px",
-              }}
-            >
-              🎵
-            </div>
-            <div className={styles.songTitle}>{song.title}</div>
-            <div className={styles.songArtist}>{song.artist}</div>
-          </div>
-        ))}
-      </div>
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
+            Canciones Disponibles
+          </h2>
 
-      {songs.length === 0 && (
-        <p style={{ textAlign: "center", marginTop: "20px" }}>
-          No hay canciones disponibles.
-        </p>
-      )}
+          {/* Button to upload song */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link to="/upload">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full h-8 w-8"
+                  title="Subir nueva canción"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent className="bg-foreground text-background">
+              <p>Subir nueva canción</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          {songs.map((song) => (
+            <div key={song._id} className="group relative">
+              {/* SONG CARD */}
+              <Card
+                className="cursor-pointer border-none bg-transparent shadow-none transition-transform hover:scale-105"
+                onClick={() => playSong(song)}
+              >
+                <CardContent className="p-0">
+                  <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-md bg-zinc-200 dark:bg-zinc-800">
+                    <div className="flex h-full w-full items-center justify-center text-muted-foreground/50">
+                      <Music className="h-12 w-12" />
+                    </div>
+
+                    <div className="absolute top-2 right-2 z-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            className="h-8 w-8 rounded-full bg-green-500 text-white shadow-md hover:bg-green-600 border-none"
+                            onClick={(e) => {
+                              e.stopPropagation(); // Evita que suene la canción al hacer clic aquí
+                              openAddModal(song);
+                            }}
+                          >
+                            <Plus className="h-5 w-5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-foreground text-background">
+                          <p>Agregar a playlist</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+
+                  {/* SONG INFO */}
+                  <div className="space-y-1">
+                    <h3 className="truncate font-medium text-foreground">
+                      {song.title}
+                    </h3>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {song.artist}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* --- MODAL SECTION (popup window) --- */}
-      {showModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.7)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: "30px",
-              borderRadius: "10px",
-              width: "400px",
-              maxWidth: "90%",
-              position: "relative",
-            }}
-          >
-            <h3 style={{ marginBottom: "20px" }}>
-              Agregar "{songToAdd?.title}" a...
-            </h3>
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Agregar a Playlist</DialogTitle>
+          </DialogHeader>
 
-            <div
-              style={{
-                maxHeight: "300px",
-                overflowY: "auto",
-                margin: "20px 0",
-                border: "1px solid #eee",
-                borderRadius: "5px",
-              }}
-            >
-              {playlists.length > 0 ? (
-                playlists.map((p) => (
+          <ScrollArea className="h-[300px] w-full rounded-md border p-4">
+            {playlists.length > 0 ? (
+              <div className="space-y-2">
+                {playlists.map((p) => (
                   <div
                     key={p._id}
                     onClick={() => handleAddToPlaylist(p._id)}
-                    style={{
-                      padding: "15px",
-                      borderBottom: "1px solid #eee",
-                      cursor: "pointer",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      transition: "background 0.2s",
-                    }}
-                    onMouseOver={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#f9f9f9")
-                    }
-                    onMouseOut={(e) =>
-                      (e.currentTarget.style.backgroundColor = "white")
-                    }
+                    className="flex cursor-pointer items-center justify-between rounded-lg p-3 transition-colors hover:bg-accent"
                   >
-                    <span style={{ fontWeight: "bold" }}>{p.name}</span>
-                    <span style={{ fontSize: "12px", color: "#888" }}>
-                      {p.songs.length} canciones
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded bg-muted">
+                        💿
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{p.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {p.songs.length} canciones
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-xl text-muted-foreground">+</span>
                   </div>
-                ))
-              ) : (
-                <p
-                  style={{
-                    padding: "20px",
-                    textAlign: "center",
-                    color: "#888",
-                  }}
-                >
-                  No tienes playlists. ¡Crea una primero!
-                </p>
-              )}
-            </div>
-
-            <button
-              onClick={() => setShowModal(false)}
-              style={{
-                width: "100%",
-                padding: "10px",
-                border: "none",
-                background: "#ccc",
-                borderRadius: "5px",
-                cursor: "pointer",
-                fontWeight: "bold",
-                color: "#333",
-              }}
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      )}
+                ))}
+              </div>
+            ) : (
+              <div className="py-10 text-center text-sm text-muted-foreground">
+                No tienes playlists. ¡Crea una primero!
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
