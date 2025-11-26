@@ -8,6 +8,16 @@ This is a full-stack portfolio project consisting of a personal music player ins
 
 This project is built using the MERN stack (MongoDB, Express, React, Node.js) along with other development tools.
 
+### Frontend
+
+- **[React.js](https://reactjs.org/)**: JavaScript library for building the user interface.
+- **[Tailwind CSS](https://tailwindcss.com/)**: Motor de estilos utilitarios.
+- **[Shadcn UI](https://ui.shadcn.com/)**: Componentes de interfaz reutilizables y accesibles (basado en Radix UI).
+- **[Lucide React](https://lucide.dev/)**: Librería de iconos consistente.
+- **[React Router Dom](https://reactrouter.com/)**: For customer-side routing (SPA).
+- **[Axios](https://axios-http.com/)**: HTTP client to consume the backend API.
+- **React Context API**: For global state management (AuthContext).
+
 ### Backend
 
 - **[Node.js](https://nodejs.org/)**
@@ -21,14 +31,6 @@ This project is built using the MERN stack (MongoDB, Express, React, Node.js) al
 
 - **[Mongoose](https://mongoosejs.com/)**
 - **[MongoDB Atlas](https://www.mongodb.com/atlas)**
-
-### Frontend
-
-- **[React.js](https://reactjs.org/)**: JavaScript library for building the user interface.
-- **[React Router Dom](https://reactrouter.com/)**: For customer-side routing (SPA).
-- **[Axios](https://axios-http.com/)**: HTTP client to consume the backend API.
-- **React Context API**: For global state management (AuthContext).
-- **CSS Modules**: For "scoped" (local) styles per component. (For now)
 
 ### Development Tools
 
@@ -109,20 +111,27 @@ This project is built using the MERN stack (MongoDB, Express, React, Node.js) al
   - Volume control.
   - Visual progress bar.
 
+- **Experiencia de Usuario (UI/UX)**
+
+  - **Diseño "Nordic Beige"**: Tema visual personalizado con paleta de colores crema/carbón.
+  - **Sidebar Responsivo**: Navegación lateral colapsable con tooltips inteligentes.
+  - **Componentes Interactivos**: Modales (Dialogs), Menús desplegables y Sliders personalizados.
+
 ---
 
 ## Next Steps (Roadmap)
 
 - **Frontend - Interactivity:**
 
-  - Implement a component library
+  - Real-time search and filtering bar.
+  - Drag and drop for uploading songs.
+  - User profile (Avatar) editing.
+  - Show Playlist in the sidebar
+  - Add songs to your favorites playlist
+  - Redesing the playlist page
+  - Redesign the song progression bar
+  - Change playlist image
   - Improve responsive design (Mobile/Desktop).
-  - Add icons (Play, Pause, Trash, etc.) using `react-icons`.
-
-- **Extra Features:**
-
-  - Search bar (filter songs by name).
-  - Drag & Drop to upload songs.
 
 - **Backend V2** (Optional)
 
