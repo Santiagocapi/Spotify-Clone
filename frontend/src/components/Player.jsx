@@ -1,6 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import { usePlayer } from "../context/PlayerContext";
-import styles from "./Player.module.css";
+
+// UI Components (Shadcn UI)
+import { Slider } from "@/components/ui/slider";
+
+// Lucide React Icons
+import {
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Volume2,
+  Music2,
+} from "lucide-react";
 
 function Player() {
   // Use the context
@@ -17,7 +29,7 @@ function Player() {
   const audioRef = useRef(null);
 
   // State to control the volume
-  const [volume, setVolume] = useState(0.5);
+  const [volume, setVolume] = useState([50]);
 
   // UseEffect to handle play/pause
   useEffect(() => {
@@ -44,7 +56,7 @@ function Player() {
   // UseEffect to handle volume
   useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.volume = volume;
+      audioRef.current.volume = volume[0] / 100;
     }
   }, [volume]);
 
@@ -58,8 +70,8 @@ function Player() {
     }
   };
 
-  const handleVolumeChange = (e) => {
-    setVolume(parseFloat(e.target.value));
+  const handleVolumeChange = (newValue) => {
+    setVolume(newValue);
   };
 
   // Vite's server gives us access to the uploads folder through the proxy.
@@ -69,41 +81,79 @@ function Player() {
     : "";
 
   return (
-    <div className={styles.playerContainer}>
-      {/* SONG INFO */}
-      <div className={styles.songInfo}>
-        <div
-          style={{
-            width: "50px",
-            height: "50px",
-            background: "#333",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: "4px",
-          }}
-        >
-          🎵
-        </div>
-        <div className={styles.songDetails}>
-          <div className={styles.songTitle}>{currentSong.title}</div>
-          <div className={styles.songArtist}>{currentSong.artist}</div>
-        </div>
-      </div>
-
-      {/* CONTROLS (play/pause button) */}
-      <div className={styles.controls}>
-        <div className={styles.buttons}>
-          <button className={styles.playButton} onClick={togglePlay}>
-            {isPlaying ? "⏸" : "▶"}
-          </button>
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 md:px-8">
+        {/* LEFT - SONG INFO */}
+        <div className="flex w-1/3 min-w-[120px] items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-secondary text-secondary-foreground">
+            <Music2 className="h-6 w-6" />
+          </div>
+          <div className="flex flex-col overflow-hidden">
+            <span className="truncate text-sm font-semibold text-foreground">
+              {currentSong.title}
+            </span>
+            <span className="truncate text-xs text-muted-foreground">
+              {currentSong.artist}
+            </span>
+          </div>
         </div>
 
-        {/* PROGRESS BAR */}
-        <div className={styles.progressBarContainer}>
-          <span>0:00</span>
-          <input type="range" className={styles.progressBar} defaultValue="0" />
-          <span>0:00</span>
+        {/* CONTROLS CENTER */}
+        <div className="flex w-1/3 flex-col items-center justify-center gap-2">
+          {/* Botones */}
+          <div className="flex items-center gap-6">
+            <button
+              className="text-muted-foreground transition-colors hover:text-foreground"
+              disabled
+            >
+              <SkipBack className="h-5 w-5" />
+            </button>
+
+            <button
+              onClick={togglePlay}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105 focus:outline-none"
+            >
+              {isPlaying ? (
+                <Pause className="h-5 w-5 fill-current" />
+              ) : (
+                <Play className="h-5 w-5 fill-current ml-0.5" />
+              )}
+            </button>
+
+            <button
+              className="text-muted-foreground transition-colors hover:text-foreground"
+              disabled
+            >
+              <SkipForward className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Barra de Progreso (Visual por ahora) */}
+          <div className="flex w-full max-w-md items-center gap-2 text-xs text-muted-foreground">
+            <span>0:00</span>
+            <Slider
+              defaultValue={[0]}
+              max={100}
+              step={1}
+              className="w-full cursor-pointer"
+            />
+            <span>0:00</span>
+          </div>
+        </div>
+
+        {/* VOLUME */}
+        <div className="flex w-1/3 justify-end">
+          <div className="flex w-full max-w-[120px] items-center gap-2">
+            <Volume2 className="h-5 w-5 text-muted-foreground" />
+            <Slider
+              defaultValue={[50]}
+              value={volume}
+              max={100}
+              step={1}
+              onValueChange={handleVolumeChange}
+              className="cursor-pointer"
+            />
+          </div>
         </div>
       </div>
 
@@ -113,20 +163,6 @@ function Player() {
         onEnded -> When it finishes, we pause it    
       */}
       <audio ref={audioRef} src={songUrl} onEnded={() => setIsPlaying(false)} />
-
-      {/* VOLUME CONTROLLER */}
-      <div className={styles.volume} style={{ marginRight: "40px" }}>
-        <span style={{ marginRight: "10px" }}>🔊</span>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={volume}
-          onChange={handleVolumeChange}
-          style={{ width: "80px", cursor: "pointer" }}
-        />
-      </div>
     </div>
   );
 }
