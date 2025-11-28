@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+// Time Function
+import { cn, formatTime } from "@/lib/utils";
 
 // Import the contexts
 import { useAuthContext } from "../context/AuthContext"; // Get Token
@@ -198,11 +200,22 @@ function Home() {
                 onClick={() => playSong(song)}
               >
                 <CardContent className="p-0">
-                  <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-md bg-zinc-200 dark:bg-zinc-800">
-                    <div className="flex h-full w-full items-center justify-center text-muted-foreground/50">
-                      <Music className="h-12 w-12" />
-                    </div>
-
+                  <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-md bg-zinc-100 dark:bg-zinc-800">
+                    {/* Show cover art or music icon */}
+                    {song.coverArtPath ? (
+                      <img
+                        src={`http://localhost:3000/${song.coverArtPath.replace(
+                          /\\/g,
+                          "/"
+                        )}`}
+                        alt={song.title}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-muted-foreground/50">
+                        <Music className="h-12 w-12" />
+                      </div>
+                    )}
                     <div className="absolute top-2 right-2 z-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -226,12 +239,12 @@ function Home() {
 
                   {/* SONG INFO */}
                   <div className="space-y-1">
-                    <h3 className="truncate font-medium text-foreground">
-                      {song.title}
-                    </h3>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {song.artist}
-                    </p>
+                    <div className="flex justify-between items-center">
+                      <h3 className="truncate ...">{song.title}</h3>
+                      <span className="text-xs text-muted-foreground">
+                        {formatTime(song.duration)}
+                      </span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
