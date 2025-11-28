@@ -6,6 +6,8 @@ import axios from "axios";
 import { useAuthContext } from "../context/AuthContext";
 import { usePlayer } from "../context/PlayerContext";
 
+import { cn, formatTime } from "@/lib/utils";
+
 // UI Components (Shadcn UI)
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,7 +22,7 @@ import {
 } from "@/components/ui/table";
 
 // Lucide React Icons
-import { Trash2, Plus, Music, PlayCircle, ArrowLeft } from "lucide-react";
+import { Trash2, Clock3, Music, PlayCircle, ArrowLeft } from "lucide-react";
 
 function Playlist() {
   const { id } = useParams();
@@ -33,7 +35,7 @@ function Playlist() {
   const [error, setError] = useState(null);
   const [showAddSection, setShowAddSection] = useState(false); // To show/hide the panel to add songs
 
-  const { playSong } = usePlayer(); // To play a song
+  const { playSong, currentSong, isPlaying } = usePlayer(); // To play a song
 
   // Function to upload files (playlist and all the songs)
   useEffect(() => {
@@ -218,7 +220,6 @@ function Playlist() {
           </CardContent>
         </Card>
       )}
-
       {/* SONG LIST (TABLE) */}
       {playlist.songs.length > 0 ? (
         <div className="rounded-md border">
@@ -226,44 +227,112 @@ function Playlist() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[50px]">#</TableHead>
+                <TableHead className="w-[60px]"></TableHead>
                 <TableHead>Título</TableHead>
                 <TableHead>Artista</TableHead>
                 <TableHead>Álbum</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
+                <TableHead className="hidden md:table-cell">Fecha</TableHead>
+                <TableHead className="hidden sm:table-cell text-right">
+                  <Clock3 className="h-4 w-4 inline-block ml-auto" />
+                </TableHead>
+                <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {playlist.songs.map((song, index) => (
-                <TableRow key={song._id} className="group">
-                  <TableCell className="font-medium text-muted-foreground">
-                    <span className="group-hover:hidden">{index + 1}</span>
-                    <button
-                      onClick={() => playSong(song)}
-                      className="hidden text-primary group-hover:inline-block"
-                    >
-                      <PlayCircle className="h-4 w-4" />
-                    </button>
-                  </TableCell>
-                  <TableCell className="font-medium">{song.title}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {song.artist}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {song.album}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      onClick={() => handleRemoveSong(song._id)}
-                      variant="ghost"
-                      size="icon"
-                      className="opacity-0 transition-opacity group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-                      title="Quitar de la lista"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {playlist.songs.map((item, index) => {
+                const song = item.song;
+                if (!song) return null;
+
+                const isCurrentSong = currentSong?._id === song._id;
+
+                return (
+                  <TableRow key={song._id} className="group h-16">
+                    <TableCell className="font-medium text-muted-foreground text-center relative">
+                      <span
+                        className={cn(
+                          "group-hover:hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
+                          isCurrentSong && "text-primary"
+                        )}
+                      >
+                        {index + 1}
+                      </span>
+                      <button
+                        onClick={() => playSong(song)}
+                        className="hidden group-hover:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 items-center justify-center text-foreground"
+                      >
+                        <PlayCircle
+                          className={cn(
+                            "h-5 w-5",
+                            isCurrentSong && "fill-primary text-primary"
+                          )}
+                        />
+                      </button>
+                    </TableCell>
+
+                    {/* SONG IMG */}
+                    <TableCell>
+                      <div className="h-10 w-10 overflow-hidden rounded-sm bg-muted relative">
+                        {song.coverArtPath ? (
+                          <img
+                            src={`http://localhost:3000/${song.coverArtPath.replace(
+                              /\\/g,
+                              "/"
+                            )}`}
+                            alt={song.title}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-secondary/50">
+                            <Music className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        {/* Animation current song */}
+                        {isCurrentSong && isPlaying && (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <div className="h-2 w-2 bg-accent rounded-full animate-pulse"></div>
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+
+                    {/* TITLE */}
+                    <TableCell className="font-medium truncate max-w-[200px]">
+                      <span className={cn(isCurrentSong && "text-primary")}>
+                        {song.title}
+                      </span>
+                    </TableCell>
+                    {/* ARTIST */}
+                    <TableCell className="text-muted-foreground">
+                      {song.artist}
+                    </TableCell>
+                    {/* ALBUM */}
+                    <TableCell className="text-muted-foreground">
+                      {song.album}
+                    </TableCell>
+                    {/* ADDED AT */}
+                    <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+                      {new Date(item.addedAt).toLocaleDateString()}
+                    </TableCell>
+                    {/* DURATION */}
+                    <TableCell className="hidden sm:table-cell text-right text-muted-foreground font-mono text-xs">
+                      {formatTime(song.duration)}
+                    </TableCell>
+
+                    {/* REMOVE SECTION */}
+                    <TableCell className="text-right">
+                      <Button
+                        onClick={() => handleRemoveSong(song._id)}
+                        variant="ghost"
+                        size="icon"
+                        className="opacity-0 transition-opacity group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                        title="Quitar de la lista"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>

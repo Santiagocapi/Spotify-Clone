@@ -56,7 +56,7 @@ const addSongToPlaylist = async (req, res) => {
     const { songId } = req.body;
     const { id: playlistId } = req.params;
 
-    // Check if the song existsconst
+    // Check if the song exists
     song = await Song.findById(songId);
     if (!song) {
       return res.status(404).json({ message: "Canción no encontrada" });
@@ -76,14 +76,18 @@ const addSongToPlaylist = async (req, res) => {
     }
 
     // Check if the song is already in the playlist
-    if (playlist.songs.includes(songId)) {
+    const songExists = playlist.songs.find(
+      (item) => item.song.toString() === songId
+    );
+    if (songExists) {
       return res
         .status(400)
         .json({ message: "La canción ya está en la playlist" });
     }
 
     // If its all ok, add the song to the playlist
-    playlist.songs.push(songId);
+    playlist.songs.push({ song: songId });
+
     await playlist.save();
     res.status(200).json(playlist);
   } catch (error) {
@@ -99,7 +103,7 @@ const getPlaylistById = async (req, res) => {
     const { id } = req.params;
 
     // We search for the playlist and "fill" the 'songs' field with the actual data
-    const playlist = await Playlist.findById(id).populate("songs");
+    const playlist = await Playlist.findById(id).populate("songs.song");
 
     if (!playlist) {
       return res.status(404).json({ message: "Playlist no encontrada" });
@@ -135,7 +139,7 @@ const removeSongFromPlaylist = async (req, res) => {
 
     // Filter the array of songs to remove the song with the given ID
     playlist.songs = playlist.songs.filter(
-      (song) => song.toString() !== songId
+      (item) => item.song.toString() !== songId
     );
 
     await playlist.save();
