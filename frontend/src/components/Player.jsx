@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { usePlayer } from "../context/PlayerContext";
+// Time Function
+import { formatTime } from "@/lib/utils";
 
 // UI Components (Shadcn UI)
 import { Slider } from "@/components/ui/slider";
@@ -28,8 +30,10 @@ function Player() {
   // Create the ref for the audio element
   const audioRef = useRef(null);
 
-  // State to control the volume
+  // State to control the volume and progress
   const [volume, setVolume] = useState([50]);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   // UseEffect to handle play/pause
   useEffect(() => {
@@ -60,7 +64,37 @@ function Player() {
     }
   }, [volume]);
 
+  // Handle time update
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  const handleSeek = (value) => {
+    if (audioRef.current) {
+      // El slider devuelve un array [valor], tomamos el primero
+      const newTime = value[0];
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
   if (!currentSong) return null; // If no song is selected, we do not display the player.
+
+  const songUrl = currentSong.filePath
+    ? `http://localhost:3000/${currentSong.filePath.replace(/\\/g, "/")}`
+    : "";
+
+  const coverUrl = currentSong.coverArtPath
+    ? `http://localhost:3000/${currentSong.coverArtPath.replace(/\\/g, "/")}`
+    : null;
 
   const togglePlay = () => {
     if (isPlaying) {
@@ -70,24 +104,26 @@ function Player() {
     }
   };
 
-  const handleVolumeChange = (newValue) => {
-    setVolume(newValue);
-  };
-
-  // Vite's server gives us access to the uploads folder through the proxy.
-  // But we need to construct the full URL.
-  const songUrl = currentSong.filePath
-    ? `http://localhost:3000/${currentSong.filePath.replace(/\\/g, "/")}`
-    : "";
-
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 md:px-8">
         {/* LEFT - SONG INFO */}
-        <div className="flex w-1/3 min-w-[120px] items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-secondary text-secondary-foreground">
-            <Music2 className="h-6 w-6" />
+        <div className="flex w-1/3 min-w-[180px] items-center gap-4">
+          {/* Cover Art */}
+          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-secondary shadow-sm">
+            {coverUrl ? (
+              <img
+                src={coverUrl}
+                alt={currentSong.title}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+                <Music2 className="h-6 w-6" />
+              </div>
+            )}
           </div>
+
           <div className="flex flex-col overflow-hidden">
             <span className="truncate text-sm font-semibold text-foreground">
               {currentSong.title}
@@ -99,8 +135,7 @@ function Player() {
         </div>
 
         {/* CONTROLS CENTER */}
-        <div className="flex w-1/3 flex-col items-center justify-center gap-2">
-          {/* Botones */}
+        <div className="flex w-1/3 min-w-[300px] flex-col items-center justify-center gap-2">
           <div className="flex items-center gap-6">
             <button
               className="text-muted-foreground transition-colors hover:text-foreground"
@@ -128,16 +163,19 @@ function Player() {
             </button>
           </div>
 
-          {/* Barra de Progreso (Visual por ahora) */}
-          <div className="flex w-full max-w-md items-center gap-2 text-xs text-muted-foreground">
-            <span>0:00</span>
+          {/* PROGRESS BAR */}
+          <div className="flex w-full items-center gap-2 text-xs text-muted-foreground">
+            <span className="w-8 text-right">{formatTime(currentTime)}</span>
+
             <Slider
-              defaultValue={[0]}
-              max={100}
+              value={[currentTime]}
+              max={duration || 100}
               step={1}
+              onValueChange={handleSeek}
               className="w-full cursor-pointer"
             />
-            <span>0:00</span>
+
+            <span className="w-8">{formatTime(duration)}</span>
           </div>
         </div>
 
@@ -150,7 +188,7 @@ function Player() {
               value={volume}
               max={100}
               step={1}
-              onValueChange={handleVolumeChange}
+              onValueChange={(val) => setVolume(val)}
               className="cursor-pointer"
             />
           </div>
@@ -162,7 +200,13 @@ function Player() {
         src={songUrl} -> The URL of the MP3 file
         onEnded -> When it finishes, we pause it    
       */}
-      <audio ref={audioRef} src={songUrl} onEnded={() => setIsPlaying(false)} />
+      <audio
+        ref={audioRef}
+        src={songUrl}
+        onEnded={() => setIsPlaying(false)}
+        onTimeUpdate={handleTimeUpdate} // Se ejecuta cada segundo mientras reproduce
+        onLoadedMetadata={handleLoadedMetadata} // Se ejecuta al cargar la canción para saber la duración
+      />
     </div>
   );
 }
