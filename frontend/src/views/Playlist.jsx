@@ -6,6 +6,22 @@ import axios from "axios";
 import { useAuthContext } from "../context/AuthContext";
 import { usePlayer } from "../context/PlayerContext";
 
+// UI Components (Shadcn UI)
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+// Lucide React Icons
+import { Trash2, Plus, Music, PlayCircle, ArrowLeft } from "lucide-react";
+
 function Playlist() {
   const { id } = useParams();
   const { user } = useAuthContext();
@@ -17,7 +33,7 @@ function Playlist() {
   const [error, setError] = useState(null);
   const [showAddSection, setShowAddSection] = useState(false); // To show/hide the panel to add songs
 
-  const { playSong } = usePlayer();
+  const { playSong } = usePlayer(); // To play a song
 
   // Function to upload files (playlist and all the songs)
   useEffect(() => {
@@ -99,9 +115,13 @@ function Playlist() {
     }
   };
 
-  if (loading) return <div className={styles.loading}>Cargando...</div>;
-  if (error) return <div className={styles.loading}>{error}</div>;
-  if (!playlist) return <div className={styles.loading}>No encontrada</div>;
+  if (loading)
+    return (
+      <div className="p-10 text-center text-muted-foreground">Cargando...</div>
+    );
+  if (error)
+    return <div className="p-10 text-center text-destructive">{error}</div>;
+  if (!playlist) return <div className="p-10 text-center">No encontrada</div>;
 
   // Filter songs to no repeat them
   const songsToAdd = allSongs.filter(
@@ -109,165 +129,154 @@ function Playlist() {
   );
 
   return (
-    <div className={styles.container}>
-      <Link
-        to="/"
-        style={{
-          textDecoration: "none",
-          color: "#666",
-          marginBottom: "20px",
-          display: "block",
-        }}
-      >
-        &larr; Volver al Inicio
-      </Link>
+    <div className="space-y-6 pb-20">
+      {/* PLAYLIST HEADER */}
+      <div className="flex flex-col gap-6 md:flex-row md:items-end">
+        {/* PORTADA */}
+        <div className="flex h-40 w-40 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-secondary shadow-lg">
+          <Music className="h-16 w-16 text-primary" />
+        </div>
 
-      <div
-        style={{
-          marginBottom: "30px",
-          borderBottom: "1px solid #eee",
-          paddingBottom: "20px",
-        }}
-      >
-        <div>
-          <h1 style={{ fontSize: "3rem", marginBottom: "10px", color: "#333" }}>
+        {/* PLAYLIST INFO */}
+        <div className="flex-1 space-y-2">
+          <Link
+            to="/"
+            className="mb-2 flex items-center text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="mr-1 h-4 w-4" /> Volver
+          </Link>
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
             {playlist.name}
           </h1>
-          <p style={{ color: "#666" }}>{playlist.songs.length} Canciones</p>
-        </div>
-
-        {/* Button to delete playlist */}
-        <button
-          onClick={handleDeletePlaylist}
-          style={{
-            marginTop: "15px",
-            backgroundColor: "#ff4444",
-            color: "white",
-            border: "none",
-            padding: "10px 15px",
-            borderRadius: "5px",
-            cursor: "pointer",
-            fontWeight: "bold",
-          }}
-        >
-          Eliminar Playlist
-        </button>
-      </div>
-
-      {/* Button to open the add menu */}
-      <button
-        onClick={() => setShowAddSection(!showAddSection)}
-        style={{
-          margin: "15px 0",
-          padding: "10px 15px",
-          backgroundColor: showAddSection ? "#ccc" : "#1db954",
-          color: "white",
-          border: "none",
-          borderRadius: "5px",
-          cursor: "pointer",
-          fontWeight: "bold",
-        }}
-      >
-        {showAddSection ? "Cerrar menú de agregar" : "Agregar Canciones"}
-      </button>
-
-      {/* --- ADD MENU (visible if showAddSection is TRUE) --- */}
-      {showAddSection && (
-        <div
-          style={{
-            marginBottom: "40px",
-            padding: "20px",
-            backgroundColor: "#f1f1f1",
-            borderRadius: "8px",
-          }}
-        >
-          <h3>Canciones disponibles para agregar:</h3>
-          <div className={styles.grid} style={{ marginTop: "15px" }}>
-            {songsToAdd.length > 0 ? (
-              songsToAdd.map((song) => (
-                <div
-                  key={song._id}
-                  className={styles.card}
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <div>
-                    <div className={styles.songTitle}>{song.title}</div>
-                    <div className={styles.songArtist}>{song.artist}</div>
-                  </div>
-                  <button
-                    onClick={() => handleAddSong(song._id)}
-                    style={{
-                      marginTop: "10px",
-                      width: "100%",
-                      padding: "8px",
-                      backgroundColor: "#1db954",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    + Añadir
-                  </button>
-                </div>
-              ))
-            ) : (
-              <p>¡Ya has agregado todas las canciones disponibles!</p>
-            )}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Playlist pública</span>
+            <span>•</span>
+            <span>{playlist.songs.length} canciones</span>
           </div>
         </div>
-      )}
-      {/* --- SONGS LIST --- */}
-      <h3>Canciones en esta playlist:</h3>
-      {/* Logic Empty State */}
-      {playlist.songs.length === 0 ? (
-        <p>Esta playlist está vacía.</p>
-      ) : (
-        <div
-          className={styles.grid}
-          style={{
-            marginTop: "20px",
-          }}
-        >
-          {playlist.songs.map((song) => (
-            <div
-              key={song._id}
-              className={styles.card}
-              onClick={() => playSong(song)}
-            >
-              {/* Button to remove song from playlist */}
-              <button
-                onClick={() => handleRemoveSong(song._id)}
-                className={styles.addButton}
-                style={{
-                  background: "#ff4444",
-                  fontSize: "1rem",
-                }}
-                title="Quitar de la playlist"
-              >
-                X
-              </button>
-              <div
-                style={{
-                  height: "120px",
-                  background: "#eee",
-                  marginBottom: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "30px",
-                }}
-              >
-                🎵
+
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setShowAddSection(!showAddSection)}
+            variant={showAddSection ? "secondary" : "default"}
+          >
+            {showAddSection ? "Cerrar búsqueda" : "Añadir canciones"}
+          </Button>
+          <Button
+            onClick={handleDeletePlaylist}
+            variant="destructive"
+            size="icon"
+            title="Eliminar Playlist"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* ADD SONG SECTION */}
+      {showAddSection && (
+        <Card className="border-dashed bg-muted/30">
+          <CardContent className="p-6">
+            <h3 className="mb-4 font-semibold">Canciones sugeridas</h3>
+            {songsToAdd.length > 0 ? (
+              <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                {songsToAdd.map((song) => (
+                  <div
+                    key={song._id}
+                    className="flex items-center justify-between rounded-md border bg-card p-2 shadow-sm"
+                  >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-muted text-muted-foreground">
+                        <Music className="h-5 w-5" />
+                      </div>
+                      <div className="truncate">
+                        <div className="truncate font-medium">{song.title}</div>
+                        <div className="truncate text-xs text-muted-foreground">
+                          {song.artist}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => handleAddSong(song._id)}
+                      size="sm"
+                      variant="outline"
+                      className="shrink-0"
+                    >
+                      Añadir
+                    </Button>
+                  </div>
+                ))}
               </div>
-              <div className={styles.songTitle}>{song.title}</div>
-              <div className={styles.songArtist}>{song.artist}</div>
-            </div>
-          ))}
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No hay más canciones disponibles para agregar.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* SONG LIST (TABLE) */}
+      {playlist.songs.length > 0 ? (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[50px]">#</TableHead>
+                <TableHead>Título</TableHead>
+                <TableHead>Artista</TableHead>
+                <TableHead>Álbum</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {playlist.songs.map((song, index) => (
+                <TableRow key={song._id} className="group">
+                  <TableCell className="font-medium text-muted-foreground">
+                    <span className="group-hover:hidden">{index + 1}</span>
+                    <button
+                      onClick={() => playSong(song)}
+                      className="hidden text-primary group-hover:inline-block"
+                    >
+                      <PlayCircle className="h-4 w-4" />
+                    </button>
+                  </TableCell>
+                  <TableCell className="font-medium">{song.title}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {song.artist}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {song.album}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      onClick={() => handleRemoveSong(song._id)}
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 transition-opacity group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                      title="Quitar de la lista"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <div className="py-20 text-center text-muted-foreground">
+          <p>Esta playlist está vacía.</p>
+          <Button
+            variant="link"
+            onClick={() => setShowAddSection(true)}
+            className="mt-2"
+          >
+            ¡Busca canciones para añadir!
+          </Button>
         </div>
       )}
     </div>
