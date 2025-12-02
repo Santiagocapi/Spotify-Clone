@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import axios from "axios";
 import { useAuthContext } from "../context/AuthContext";
 // Logo
 import OurMusicLogo from "@/components/Logo";
@@ -17,6 +18,7 @@ import {
   Heart,
   Settings,
   ListMusic,
+  Disc,
 } from "lucide-react";
 
 // UI Components (Shadcn UI)
@@ -34,8 +36,29 @@ import { cn } from "@/lib/utils";
 
 function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [playlists, setPlaylists] = useState([]);
   const { user, dispatch } = useAuthContext();
   const location = useLocation();
+
+  useEffect(() => {
+    const fetchPlaylists = async () => {
+      try {
+        if (user) {
+          const res = await axios.get("/api/playlists/my", {
+            headers: { Authorization: `Bearer ${user.token}` },
+          });
+          setPlaylists(res.data);
+        }
+      } catch (error) {
+        console.error("Error cargando playlists en sidebar", error);
+      }
+    };
+
+    fetchPlaylists();
+
+    // In a real app, i would use a PlaylistContext to update playlists automatically,
+    // now it refreshes when navigating
+  }, [user]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -163,23 +186,43 @@ function Sidebar() {
 
           <div className="space-y-1 py-2">
             {!isCollapsed && (
-              <h3 className="mb-2 px-4 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
-                Tu Biblioteca
-              </h3>
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="mb-2 px-4 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+                  <Library className="h-4 w-4 inline-block" /> Tu Biblioteca
+                </h3>
+              </div>
             )}
             {libraryItems.map((item) => (
               <NavButton key={item.label} {...item} />
             ))}
           </div>
 
-          <div className="space-y-1 py-2">
-            {!isCollapsed && (
+          <div className="mt-4">
+            {!isCollapsed && playlists.length > 0 && (
               <h3 className="mb-2 px-4 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
-                Tus Playlist
+                Playlists
               </h3>
             )}
+
+            <div className="space-y-1">
+              {playlists.map((playlist) => (
+                <NavButton
+                  key={playlist._id}
+                  icon={Disc} // O puedes usar una imagen pequeña si la tienes
+                  label={playlist.name}
+                  path={`/playlist/${playlist._id}`}
+                />
+              ))}
+              {playlists.length === 0 && !isCollapsed && (
+                <p className="px-4 text-sm text-muted-foreground">
+                  Sin playlists
+                </p>
+              )}
+            </div>
           </div>
         </ScrollArea>
+
+        {/* Playlists */}
 
         {/* FOOTER ( User + Logout Button) */}
         <div className="p-3 mt-auto border-t border-border bg-background/50">

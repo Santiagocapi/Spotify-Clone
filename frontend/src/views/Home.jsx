@@ -167,7 +167,7 @@ function Home() {
       {/* SONGS SECTION */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">
+          <h2 className="text-2xl font-bold tracking-tight text-tertiary">
             Canciones Disponibles
           </h2>
 
