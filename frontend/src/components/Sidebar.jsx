@@ -69,8 +69,8 @@ function Sidebar() {
   const navItems = [
     { icon: Home, label: "Inicio", path: "/" },
     { icon: Search, label: "Explorar", path: "/explore" },
-    { icon: Heart, label: "Favoritos", path: "/favorites" },
-    { icon: ListMusic, label: "Recientes", path: "/history" },
+    { icon: Heart, label: "Tus Me Gusta", path: "/collection/tracks" },
+    { icon: ListMusic, label: "Playlists", path: "/playlists" },
   ];
 
   const libraryItems = [

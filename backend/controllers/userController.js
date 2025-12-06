@@ -88,14 +88,57 @@ const getUserProfile = async (req, res) => {
       email: req.user.email,
     });
   } else {
-    res.status(404).json({ message: "Usuario no encontrado."
-    })
+    res.status(404).json({ message: "Usuario no encontrado." });
   }
-}
+};
+
+// @desc    Toggles like on a song
+// @route   PUT /api/users/like/:id
+// @access  Private
+const toggleLikeSong = async (req, res) => {
+  try {
+    const { id: songId } = req.params;
+    const user = await User.findById(req.user._id);
+
+    // Verify if is liked
+    const isLiked = user.likedSongs.includes(songId);
+
+    if (isLiked) {
+      // If is liked, remove it
+      user.likedSongs = user.likedSongs.filter(
+        (id) => id.toString() !== songId
+      );
+    } else {
+      // If is not liked, add it
+      user.likedSongs.push(songId);
+    }
+
+    await user.save();
+
+    // Return the updated list of IDs to the frontend
+    res.status(200).json(user.likedSongs);
+  } catch (error) {
+    res.status(500).json({ message: `Error: ${error.message}` });
+  }
+};
+
+// @desc    Obtains liked songs
+// @route   GET /api/users/liked
+// @access  Private
+const getLikedSongs = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate("likedSongs");
+    res.status(200).json(user.likedSongs);
+  } catch (error) {
+    res.status(500).json({ message: `Error: ${error.message}` });
+  }
+};
 
 // Export the controller functions
 module.exports = {
   registerUser,
   loginUser,
   getUserProfile,
+  toggleLikeSong,
+  getLikedSongs,
 };

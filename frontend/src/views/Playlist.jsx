@@ -12,6 +12,9 @@ import { cn, formatTime } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -20,14 +23,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 // Lucide React Icons
-import { Trash2, Clock3, Music, PlayCircle, ArrowLeft } from "lucide-react";
+import {
+  Trash2,
+  Clock3,
+  Music,
+  PlayCircle,
+  ArrowLeft,
+  Edit2,
+  Camera,
+} from "lucide-react";
 
 function Playlist() {
   const { id } = useParams();
   const { user } = useAuthContext();
   const navigate = useNavigate();
+  const { playSong, currentSong, isPlaying } = usePlayer(); // To play a song
 
   const [playlist, setPlaylist] = useState(null);
   const [allSongs, setAllSongs] = useState([]); // Songs list and add songs
@@ -35,7 +54,12 @@ function Playlist() {
   const [error, setError] = useState(null);
   const [showAddSection, setShowAddSection] = useState(false); // To show/hide the panel to add songs
 
-  const { playSong, currentSong, isPlaying } = usePlayer(); // To play a song
+  // Edition states
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editFile, setEditFile] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Function to upload files (playlist and all the songs)
   useEffect(() => {
@@ -62,6 +86,34 @@ function Playlist() {
       fetchData();
     }
   }, [id, user]);
+
+  // Function to edit playlist
+  const handleUpdatePlaylist = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    const formData = new FormData();
+    formData.append("name", editName);
+    formData.append("description", editDesc);
+    if (editFile) {
+      formData.append("coverImage", editFile);
+    }
+
+    try {
+      const res = await axios.put(`/api/playlists/${id}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
+      setPlaylist(res.data); // Update playlist in the screen
+      setIsEditOpen(false); // Exit modal
+    } catch (err) {
+      alert("Error al actualizar playlist");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Function to Add Songs
   const handleAddSong = async (songId) => {
@@ -133,50 +185,92 @@ function Playlist() {
   return (
     <div className="space-y-6 pb-20">
       {/* PLAYLIST HEADER */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-end">
-        {/* PORTADA */}
-        <div className="flex h-40 w-40 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-secondary shadow-lg">
-          <Music className="h-16 w-16 text-primary" />
+      <div className="flex flex-col gap-6 md:flex-row md:items-end bg-gradient-to-b from-zinc-100/50 to-background p-6 rounded-xl">
+        {/* Playlist cover */}
+        <div
+          className="group relative flex h-52 w-52 shrink-0 items-center justify-center overflow-hidden rounded-lg shadow-xl cursor-pointer bg-muted"
+          onClick={() => setIsEditOpen(true)}
+        >
+          {playlist.coverImagePath ? (
+            <img
+              src={`http://localhost:3000/${playlist.coverImagePath.replace(
+                /\\/g,
+                "/"
+              )}`}
+              alt={playlist.name}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <Music className="h-20 w-20 text-muted-foreground/50" />
+          )}
+
+          {/* Overlay edit Image */}
+          <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+            <Camera className="h-8 w-8 mb-2" />
+            <span className="text-sm font-medium">Editar foto</span>
+          </div>
         </div>
 
         {/* PLAYLIST INFO */}
-        <div className="flex-1 space-y-2">
-          <Link
-            to="/"
-            className="mb-2 flex items-center text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="mr-1 h-4 w-4" /> Volver
-          </Link>
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            {playlist.name}
-          </h1>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Playlist pública</span>
+        <div className="flex-1 space-y-4">
+          <div className="space-y-1">
+            <h5 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Playlist
+            </h5>
+            {/* TITLE (Click to edit) */}
+            <h1
+              className="text-2xl font-black tracking-tight sm:text-6xl hover:underline cursor-pointer decoration-4 decoration-primary"
+              onClick={() => setIsEditOpen(true)}
+            >
+              {playlist.name}
+            </h1>
+            <p className="text-muted-foreground pt-4">
+              {playlist.description || "Sin descripción"}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
+            {/* User Name, user avatar comming soon */}
+            <span className="text-foreground">Tu Playlist</span>
             <span>•</span>
             <span>{playlist.songs.length} canciones</span>
           </div>
         </div>
+      </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2">
+      {/* Action Buttons */}
+      <div className="flex items-center justify-between px-4">
+        <div className="flex gap-4">
           <Button
             onClick={() => setShowAddSection(!showAddSection)}
-            variant={showAddSection ? "secondary" : "default"}
+            className="rounded-full px-8 font-bold"
+            size="lg"
           >
-            {showAddSection ? "Cerrar búsqueda" : "Añadir canciones"}
+            {showAddSection ? "Listo" : "Añadir canciones"}
           </Button>
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setIsEditOpen(true)}
+            title="Editar detalles"
+          >
+            <Edit2 className="h-5 w-5" />
+          </Button>
+
           <Button
             onClick={handleDeletePlaylist}
-            variant="destructive"
+            variant="ghost"
             size="icon"
+            className="text-muted-foreground hover:text-destructive"
             title="Eliminar Playlist"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-5 w-5" />
           </Button>
         </div>
       </div>
 
-      <Separator />
+      <Separator className="my-4" />
 
       {/* ADD SONG SECTION */}
       {showAddSection && (
@@ -348,6 +442,76 @@ function Playlist() {
           </Button>
         </div>
       )}
+
+      {/* MODAL SECTION (EDIT) */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Editar detalles</DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleUpdatePlaylist} className="grid gap-4 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-4">
+              {/* Image Input */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="h-40 w-40 bg-muted rounded-md flex items-center justify-center overflow-hidden relative border border-dashed border-zinc-400">
+                  {editFile ? (
+                    <img
+                      src={URL.createObjectURL(editFile)}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : playlist.coverImagePath ? (
+                    <img
+                      src={`http://localhost:3000/${playlist.coverImagePath.replace(
+                        /\\/g,
+                        "/"
+                      )}`}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <Music className="h-12 w-12 text-muted-foreground" />
+                  )}
+                </div>
+                <Input
+                  id="picture"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setEditFile(e.target.files[0])}
+                  className="w-full text-xs cursor-pointer file:mr-4 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                />
+              </div>
+
+              {/* Text Inputs */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nombre</Label>
+                  <Input
+                    id="name"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="desc">Descripción</Label>
+                  <Textarea
+                    id="desc"
+                    placeholder="Añade una descripción opcional"
+                    value={editDesc}
+                    onChange={(e) => setEditDesc(e.target.value)}
+                    className="resize-none h-24"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? "Guardando..." : "Guardar"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

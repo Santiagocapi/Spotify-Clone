@@ -221,7 +221,7 @@ function Home() {
                         <TooltipTrigger asChild>
                           <Button
                             size="icon"
-                            className="h-8 w-8 rounded-full bg-green-500 text-white shadow-md hover:bg-green-600 border-none"
+                            className="h-8 w-8 rounded-full bg-accent text-black shadow-md hover:bg-black/50 hover:text-white border-none"
                             onClick={(e) => {
                               e.stopPropagation(); // Evita que suene la canción al hacer clic aquí
                               openAddModal(song);

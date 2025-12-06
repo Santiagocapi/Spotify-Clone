@@ -1,5 +1,6 @@
 const Playlist = require("../models/playlistModel");
 const Song = require("../models/songModel");
+const path = require("path");
 const { create } = require("../models/songModel");
 
 // @desc    Create a new playlist
@@ -173,6 +174,35 @@ const deletePlaylist = async (req, res) => {
   }
 };
 
+// @desc    Edit a playlist (name, description, image)
+// @route   PUT /api/playlists/:id
+// @access  Private
+const editPlaylist = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description } = req.body;
+
+    const playlist = await Playlist.findById(id);
+
+    if (!playlist) {
+      return res.status(404).json({ message: "Playlist no encontrada" });
+    }
+
+    // Check if the user is the owner
+    if (playlist.owner.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "No autorizado" });
+    }
+
+    playlist.name = name || playlist.name;
+    playlist.description = description || playlist.description;
+
+    await playlist.save();
+    res.status(200).json(playlist);
+  } catch (error) {
+    res.status(500).json({ message: `Error del servidor: ${error.message}` });
+  }
+};
+
 module.exports = {
   createPlaylist,
   getUserPlaylists,
@@ -180,4 +210,5 @@ module.exports = {
   getPlaylistById,
   removeSongFromPlaylist,
   deletePlaylist,
+  editPlaylist,
 };
