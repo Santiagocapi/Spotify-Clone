@@ -1,7 +1,6 @@
 const Playlist = require("../models/playlistModel");
 const Song = require("../models/songModel");
 const path = require("path");
-const { create } = require("../models/songModel");
 
 // @desc    Create a new playlist
 // @route   POST /api/playlists
@@ -181,20 +180,24 @@ const editPlaylist = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, description } = req.body;
-
     const playlist = await Playlist.findById(id);
 
-    if (!playlist) {
+    if (!playlist)
       return res.status(404).json({ message: "Playlist no encontrada" });
-    }
-
-    // Check if the user is the owner
-    if (playlist.owner.toString() !== req.user._id.toString()) {
+    if (playlist.owner.toString() !== req.user._id.toString())
       return res.status(403).json({ message: "No autorizado" });
-    }
 
-    playlist.name = name || playlist.name;
-    playlist.description = description || playlist.description;
+    if (name) playlist.name = name;
+    if (description) playlist.description = description;
+
+    // Handle image upload
+    if (req.file) {
+      playlist.coverImagePath = path.join(
+        "uploads",
+        "covers",
+        req.file.filename
+      );
+    }
 
     await playlist.save();
     res.status(200).json(playlist);

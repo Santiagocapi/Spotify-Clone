@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
-
 const { protect } = require("../middleware/authMiddleware");
 const {
   createPlaylist,
@@ -18,7 +17,7 @@ const {
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     // Save the uploaded image in the "uploads/playlists" directory
-    cb(null, path.join(__dirname, "../uploads/playlists"));
+    cb(null, path.join(__dirname, "../uploads/covers/"));
   },
   filename: (req, file, cb) => {
     cb(null, `playlist-${Date.now()}-${file.originalname}`);

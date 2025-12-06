@@ -100,23 +100,21 @@ const toggleLikeSong = async (req, res) => {
     const { id: songId } = req.params;
     const user = await User.findById(req.user._id);
 
-    // Verify if is liked
+    // Verify if the song is already liked
     const isLiked = user.likedSongs.includes(songId);
 
     if (isLiked) {
-      // If is liked, remove it
+      // If already liked, remove it
       user.likedSongs = user.likedSongs.filter(
         (id) => id.toString() !== songId
       );
     } else {
-      // If is not liked, add it
+      // If not liked, add it
       user.likedSongs.push(songId);
     }
 
     await user.save();
-
-    // Return the updated list of IDs to the frontend
-    res.status(200).json(user.likedSongs);
+    res.status(200).json(user.likedSongs); // Return the updated list of liked songs
   } catch (error) {
     res.status(500).json({ message: `Error: ${error.message}` });
   }
@@ -127,8 +125,18 @@ const toggleLikeSong = async (req, res) => {
 // @access  Private
 const getLikedSongs = async (req, res) => {
   try {
+    // Find the user and populate the likedSongs field
     const user = await User.findById(req.user._id).populate("likedSongs");
-    res.status(200).json(user.likedSongs);
+
+    // Return the liked songs in a playlist-like format
+    res.status(200).json({
+      _id: "liked-songs",
+      name: "Tus Me Gusta",
+      description: "Tus canciones favoritas en un solo lugar",
+      coverImagePath: null,
+      songs: user.likedSongs,
+      isLikedPlaylist: true,
+    });
   } catch (error) {
     res.status(500).json({ message: `Error: ${error.message}` });
   }
