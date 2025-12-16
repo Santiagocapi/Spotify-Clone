@@ -137,6 +137,8 @@ const getLikedSongs = async (req, res) => {
       songs: user.likedSongs,
       isLikedPlaylist: true,
     });
+    // Return an array if likedSongs is empty or no exists
+    res.status(200).json(user.likedSongs || []);
   } catch (error) {
     res.status(500).json({ message: `Error: ${error.message}` });
   }

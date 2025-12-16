@@ -103,7 +103,7 @@ const getPlaylistById = async (req, res) => {
     const { id } = req.params;
 
     // We search for the playlist and "fill" the 'songs' field with the actual data
-    const playlist = await Playlist.findById(id).populate("songs.song");
+    const playlist = await Playlist.findById(id).populate("songs");
 
     if (!playlist) {
       return res.status(404).json({ message: "Playlist no encontrada" });

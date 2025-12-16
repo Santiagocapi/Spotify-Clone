@@ -40,6 +40,7 @@ import {
   ArrowLeft,
   Edit2,
   Camera,
+  Heart,
 } from "lucide-react";
 
 function Playlist() {
@@ -53,6 +54,7 @@ function Playlist() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddSection, setShowAddSection] = useState(false); // To show/hide the panel to add songs
+  const [likedSongs, setLikedSongs] = useState([]); // To store the liked songs
 
   // Edition states
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -74,6 +76,32 @@ function Playlist() {
         // We make the GET request to our backend to get all songs
         const songsRes = await axios.get("/api/songs");
         setAllSongs(songsRes.data);
+
+        try {
+          // We make the GET request to our backend to get the liked songs
+          const userLikesRes = await axios.get("/api/users/liked", {
+            headers: { Authorization: `Bearer ${user.token}` },
+          });
+
+          // SECURITY CHECK:
+          // If data is an array, we map it. If not, we use an empty array.
+          if (Array.isArray(userLikesRes.data)) {
+            const ids = userLikesRes.data.map((song) => song._id);
+            setLikedSongs(ids);
+          } else {
+            console.warn(
+              "La respuesta de likes no fue un array:",
+              userLikesRes.data
+            );
+            setLikedSongs([]); // If it returns null or something weird, we assume 0 likes
+          }
+        } catch (likeError) {
+          console.warn(
+            "No se pudieron cargar los likes (posiblemente usuario nuevo):",
+            likeError
+          );
+          setLikedSongs([]); // We fail silently to not break the entire page
+        }
       } catch (err) {
         console.error(err);
         setError("Error al cargar la playlist");
@@ -169,6 +197,28 @@ function Playlist() {
     }
   };
 
+  // Function to Like Song
+  const handleLike = async (songId) => {
+    try {
+      await axios.put(
+        `/api/users/like/${songId}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${user.token}` },
+        }
+      );
+
+      // Update the liked songs in the screen
+      if (likedSongs.includes(songId)) {
+        setLikedSongs(likedSongs.filter((id) => id !== songId)); // Remove like
+      } else {
+        setLikedSongs([...likedSongs, songId]); // Add like
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   if (loading)
     return (
       <div className="p-10 text-center text-muted-foreground">Cargando...</div>
@@ -178,10 +228,26 @@ function Playlist() {
   if (!playlist) return <div className="p-10 text-center">No encontrada</div>;
 
   // Filter songs to no repeat them
-  const songsToAdd = allSongs.filter(
-    (song) => !playlist.songs.some((pSong) => pSong._id === song._id)
-  );
+  const songsToAdd = allSongs.filter((song) => {
+    // If playlist.songs doesn't exist or isn't an array, we assume it's empty
+    if (!Array.isArray(playlist.songs)) return true;
 
+    return !playlist.songs.some((item) => {
+      // CASE 1: New Structure (Object with .song)
+      if (item && item.song && item.song._id) {
+        return item.song._id === song._id;
+      }
+      // CASE 2: Old Structure (Solo ID string)
+      if (typeof item === "string") {
+        return item === song._id;
+      }
+      // CASE 3: Song Object directly (if populate changed)
+      if (item && item._id) {
+        return item._id === song._id;
+      }
+      return false;
+    });
+  });
   return (
     <div className="space-y-6 pb-20">
       {/* PLAYLIST HEADER */}
@@ -326,6 +392,7 @@ function Playlist() {
                 <TableHead>Artista</TableHead>
                 <TableHead>Álbum</TableHead>
                 <TableHead className="hidden md:table-cell">Fecha</TableHead>
+                <TableHead className="w-[50px]"></TableHead>
                 <TableHead className="hidden sm:table-cell text-right">
                   <Clock3 className="h-4 w-4 inline-block ml-auto" />
                 </TableHead>
@@ -334,8 +401,21 @@ function Playlist() {
             </TableHeader>
             <TableBody>
               {playlist.songs.map((item, index) => {
-                const song = item.song;
-                if (!song) return null;
+                // Logic to detect which format we have
+                let song = null;
+                let addedAt = null;
+
+                if (item.song) {
+                  // New Format: { song: {...}, addedAt: ... }
+                  song = item.song;
+                  addedAt = item.addedAt;
+                } else if (item._id) {
+                  // Hybrid Format: item is the song directly (simple populate)
+                  song = item;
+                }
+
+                // If after all there is no valid song, skip this row
+                if (!song || !song._id) return null;
 
                 const isCurrentSong = currentSong?._id === song._id;
 
@@ -406,6 +486,21 @@ function Playlist() {
                     {/* ADDED AT */}
                     <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
                       {new Date(item.addedAt).toLocaleDateString()}
+                    </TableCell>
+                    {/* LIKE */}
+                    <TableCell>
+                      <button
+                        onClick={() => handleLike(song._id)}
+                        className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                      >
+                        <Heart
+                          className={cn(
+                            "h-5 w-5",
+                            likedSongs.includes(song._id) &&
+                              "fill-primary text-primary"
+                          )}
+                        />
+                      </button>
                     </TableCell>
                     {/* DURATION */}
                     <TableCell className="hidden sm:table-cell text-right text-muted-foreground font-mono text-xs">

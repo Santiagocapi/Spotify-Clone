@@ -11,6 +11,7 @@ import Register from "./views/Register.jsx";
 import UploadSong from "./views/UploadSong.jsx";
 import CreatePlaylist from "./views/CreatePlaylist.jsx";
 import Playlist from "./views/Playlist.jsx";
+import LikedSongs from "./views/LikedSongs.jsx";
 
 // Import Context
 import { AuthProvider } from "./context/AuthContext.jsx";
@@ -49,6 +50,7 @@ const router = createBrowserRouter([
             path: "/playlist/:id",
             element: <Playlist />,
           },
+          { path: "/collection/tracks", element: <LikedSongs /> },
         ],
       },
 
