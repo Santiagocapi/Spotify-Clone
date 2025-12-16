@@ -1,19 +1,51 @@
-# Spotify-Clone (Personal Music Player)
+# OurMusic - Spotify Clone
 
-This is a full-stack portfolio project consisting of a personal music player inspired by Spotify. The application allows users to register, upload their own songs, and create custom playlists.
+A modern, full-stack music streaming application built with the **MERN stack** (MongoDB, Express, React, Node.js). This project replicates core Spotify functionalities with a custom "Nordic Beige" aesthetic, featuring user authentication, playlist management, and a robust "Liked Songs" system.
+
+---
+
+## Features
+
+### User Authentication
+
+- **Secure Login/Register:** JWT-based authentication with bcrypt password hashing.
+- **Protected Routes:** Middleware to secure API endpoints and frontend pages.
+
+### Music Player & Library
+
+- **Global Player:** Persistent playback bar enabling music control across pages.
+- **Song Management:** Upload and manage tracks (MP3) with cover art.
+- **Dynamic Sidebar:** Real-time navigation showing your library and created playlists.
+
+### Liked Songs System
+
+- **One-Click Likes:** Add songs to your favorites instantly from any view.
+- **Dedicated Collection:** Access all your liked tracks in a specialized "Liked Songs" playlist.
+- **Smart Indicators:** Visual feedback (filled hearts) showing liked status across the app.
+
+### Advanced Playlist Management
+
+- **Create & Delete:** Users can create unlimited personal playlists.
+- **Customization:** Edit playlist details including **Title**, **Description**, and **Custom Cover Image**.
+- **Song Curation:** Search and add songs directly to specific playlists or remove them easily.
+- **Visuals:** Auto-generated covers or custom uploaded images for playlists.
+
+### UI/UX Design
+
+- **Nordic Beige Theme:** A custom, warm color palette using Tailwind CSS variables.
+- **Shadcn UI Components:** Polished, accessible components (Dialogs, Tables, Tooltips).
+- **Responsive Design:** Optimized layout for different screen sizes.
 
 ---
 
 ## Technology Stack
 
-This project is built using the MERN stack (MongoDB, Express, React, Node.js) along with other development tools.
-
 ### Frontend
 
 - **[React.js](https://reactjs.org/)**: JavaScript library for building the user interface.
-- **[Tailwind CSS](https://tailwindcss.com/)**: Motor de estilos utilitarios.
-- **[Shadcn UI](https://ui.shadcn.com/)**: Componentes de interfaz reutilizables y accesibles (basado en Radix UI).
-- **[Lucide React](https://lucide.dev/)**: Librería de iconos consistente.
+- **[Tailwind CSS](https://tailwindcss.com/)**: A utility-first CSS framework.
+- **[Shadcn UI](https://ui.shadcn.com/)**: A collection of free and open source components.
+- **[Lucide React](https://lucide.dev/)**: A collection of free and open source icons.
 - **[React Router Dom](https://reactrouter.com/)**: For customer-side routing (SPA).
 - **[Axios](https://axios-http.com/)**: HTTP client to consume the backend API.
 - **React Context API**: For global state management (AuthContext).
@@ -41,81 +73,30 @@ This project is built using the MERN stack (MongoDB, Express, React, Node.js) al
 
 ---
 
-## Implemented Functionalities
+## Installation & Setup
 
-### Backend
+1.  **Clone the repository**
 
-- **REST API Server** with `Node.js` and `Express`.
+    ```bash
+    git clone https://github.com/Santiagocapi/Spotify-Clone.git
+    cd Spotify-Clone
+    ```
 
-- **Database Connection** NoSQL (`MongoDB Atlas`).
+2.  **Backend Setup**
 
-- **Data Modeling** with Mongoose (Users, Songs, Playlists).
+    ```bash
+    cd backend
+    npm install
+    # Create a .env file with: MONGO_URI, JWT_SECRET
+    npm start
+    ```
 
-- **User Authentication:**
-
-  - `POST /api/users/register`: Registration of new users with encrypted password (using `bcrypt`).
-  - `POST /api/users/login`: User login and generation of "VIP pass" (using `JSON Web Token`).
-
-- **Authorization Middleware:**
-
-  - Protected paths that only authenticated users (with a valid token) can access.
-
-- **Song Management:**
-
-  - `POST /api/songs/upload`: Protected endpoint for uploading `.mp3` files (using `multer`).
-  - `GET /api/songs`: Public endpoint for listing all songs in the database.
-
-- **Playlist Management:**
-
-  - `POST /api/playlists`: Protected endpoint to create a new playlist.
-  - `GET /api/playlists/my`: Protected endpoint to retrieve all playlists of the logged-in user.
-  - `PUT /api/playlists/:id/add`: Protected endpoint to add a song to a user's playlist.
-
-### Frontend (In Progress)
-
-- **Project Setup** with Vite and React.
-
-- **Routing**:
-
-  - Configuration of `react-router-dom` with a main layout (`App.jsx`) and nested routes (`Home`, `Login`, `Register`).
-
-- **Authentication Forms**:
-
-  - `Register.jsx` component with `useState` and `axios` to connect to the backend.
-  - `Login.jsx` component with `useState` and `axios`.
-
-- **Global Authentication State**:
-
-  - Created using `AuthContext.jsx` with `useReducer` and `useContext`.
-  - The app is "wrapped" within the `AuthProvider`.
-  - Login updates the global state and saves it to `localStorage`.
-  - The app reads `localStorage` on startup to keep the user logged in.
-  - Protected Routes (`ProtectedRoute`) and Public Routes (`PublicRoute`).
-  - Dynamic header with Logout button.
-
-- **Dashboard (Home)**:
-
-  - Use the public API (`GET /api/songs`) to display the song catalog.
-  - Use the private API (`GET /api/playlists/my`) to display the user's playlists.
-
-- **Content Management**:
-
-  - Playlist Management: Create playlists, delete playlists, view details.
-  - Upload Music: Form to send files to the server.
-  - Interactivity: Add songs to playlists from the Home screen (`Modal`) or from the Playlist.
-
-- **Music Player**:
-
-  - Persistent component (does not stop while browsing).
-  - Play/Pause control.
-  - Volume control.
-  - Visual progress bar.
-
-- **Experiencia de Usuario (UI/UX)**
-
-  - **Diseño "Nordic Beige"**: Tema visual personalizado con paleta de colores crema/carbón.
-  - **Sidebar Responsivo**: Navegación lateral colapsable con tooltips inteligentes.
-  - **Componentes Interactivos**: Modales (Dialogs), Menús desplegables y Sliders personalizados.
+3.  **Frontend Setup**
+    ```bash
+    cd frontend
+    npm install
+    npm run dev
+    ```
 
 ---
 
@@ -126,11 +107,6 @@ This project is built using the MERN stack (MongoDB, Express, React, Node.js) al
   - Real-time search and filtering bar.
   - Drag and drop for uploading songs.
   - User profile (Avatar) editing.
-  - Show Playlist in the sidebar
-  - Add songs to your favorites playlist
-  - Redesing the playlist page
-  - Redesign the song progression bar
-  - Change playlist image
   - Improve responsive design (Mobile/Desktop).
 
 - **Backend V2** (Optional)
