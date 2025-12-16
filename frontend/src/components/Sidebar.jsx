@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import axios from "axios";
 import { useAuthContext } from "../context/AuthContext";
 // Logo
 import OurMusicLogo from "@/components/Logo";
@@ -14,9 +15,9 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Heart,
-  Settings,
   ListMusic,
+  Disc,
+  Heart,
 } from "lucide-react";
 
 // UI Components (Shadcn UI)
@@ -34,8 +35,29 @@ import { cn } from "@/lib/utils";
 
 function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [playlists, setPlaylists] = useState([]);
   const { user, dispatch } = useAuthContext();
   const location = useLocation();
+
+  useEffect(() => {
+    const fetchPlaylists = async () => {
+      try {
+        if (user) {
+          const res = await axios.get("/api/playlists/my", {
+            headers: { Authorization: `Bearer ${user.token}` },
+          });
+          setPlaylists(res.data);
+        }
+      } catch (error) {
+        console.error("Error cargando playlists en sidebar", error);
+      }
+    };
+
+    fetchPlaylists();
+
+    // In a real app, i would use a PlaylistContext to update playlists automatically,
+    // now it refreshes when navigating
+  }, [user]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -46,8 +68,7 @@ function Sidebar() {
   const navItems = [
     { icon: Home, label: "Inicio", path: "/" },
     { icon: Search, label: "Explorar", path: "/explore" },
-    { icon: Heart, label: "Favoritos", path: "/favorites" },
-    { icon: ListMusic, label: "Recientes", path: "/history" },
+    { icon: ListMusic, label: "Playlists", path: "/playlists" },
   ];
 
   const libraryItems = [
@@ -58,6 +79,7 @@ function Sidebar() {
   // Auxiliary component to render buttons with Tooltip
   const NavButton = ({
     icon: Icon,
+    image,
     label,
     path,
     onClick,
@@ -77,7 +99,17 @@ function Sidebar() {
           className
         )}
       >
-        <Icon size={20} />
+        {/* If it has an image, we show it, otherwise we show the icon */}
+        {image ? (
+          <img
+            src={image}
+            alt={label}
+            className="h-5 w-5 rounded-sm object-cover shrink-0"
+          />
+        ) : (
+          <Icon size={20} className="shrink-0" />
+        )}
+
         {!isCollapsed && <span className="truncate">{label}</span>}
       </Button>
     );
@@ -151,7 +183,7 @@ function Sidebar() {
           </div>
         )}
 
-        {/* SCROLLABLE CONTENT (Navigation) */}
+        {/* Navigation */}
         <ScrollArea className="flex-1 px-3">
           <div className="space-y-1 py-2">
             {navItems.map((item) => (
@@ -161,23 +193,40 @@ function Sidebar() {
 
           <Separator className="my-4 opacity-50" />
 
-          <div className="space-y-1 py-2">
+          {/* PLAYLISTS */}
+          <div className="mt-4">
             {!isCollapsed && (
               <h3 className="mb-2 px-4 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
-                Tu Biblioteca
+                Tus Playlists
               </h3>
             )}
-            {libraryItems.map((item) => (
-              <NavButton key={item.label} {...item} />
-            ))}
-          </div>
 
-          <div className="space-y-1 py-2">
-            {!isCollapsed && (
-              <h3 className="mb-2 px-4 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
-                Tus Playlist
-              </h3>
-            )}
+            <div className="space-y-1">
+              {/* liked songs button */}
+              <NavButton
+                icon={Heart}
+                label="Tus Me Gusta"
+                path="/collection/tracks"
+                className="text-primary hover:text-primary hover:bg-primary/10"
+              />
+              {/* playlist list */}
+              {playlists.map((playlist) => (
+                <NavButton
+                  key={playlist._id}
+                  icon={Disc}
+                  image={
+                    playlist.coverImagePath
+                      ? `http://localhost:3000/${playlist.coverImagePath.replace(
+                          /\\/g,
+                          "/"
+                        )}`
+                      : null
+                  }
+                  label={playlist.name}
+                  path={`/playlist/${playlist._id}`}
+                />
+              ))}
+            </div>
           </div>
         </ScrollArea>
 

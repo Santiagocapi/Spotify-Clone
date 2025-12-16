@@ -143,9 +143,25 @@ function Home() {
               <Link key={playlist._id} to={`/playlist/${playlist._id}`}>
                 <Card className="group relative h-full overflow-hidden border-none bg-muted/40 transition-all hover:bg-muted">
                   <CardContent className="p-4">
-                    <div className="mb-4 flex aspect-square w-full items-center justify-center rounded-md bg-gradient-to-br from-primary/10 to-primary/5 shadow-sm">
-                      <Disc />
+                    {/* Playlist cover image */}
+                    <div className="mb-4 aspect-square w-full overflow-hidden rounded-md bg-zinc-100 shadow-sm dark:bg-zinc-800 relative">
+                      {playlist.coverImagePath ? (
+                        <img
+                          src={`http://localhost:3000/${playlist.coverImagePath.replace(
+                            /\\/g,
+                            "/"
+                          )}`}
+                          alt={playlist.name}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        /* If no image, show the gradient with the disc */
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5 text-primary">
+                          <Disc className="h-10 w-10" />
+                        </div>
+                      )}
                     </div>
+
                     <h3 className="truncate font-semibold text-foreground">
                       {playlist.name}
                     </h3>
@@ -167,7 +183,7 @@ function Home() {
       {/* SONGS SECTION */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">
+          <h2 className="text-2xl font-bold tracking-tight text-tertiary">
             Canciones Disponibles
           </h2>
 
@@ -221,7 +237,7 @@ function Home() {
                         <TooltipTrigger asChild>
                           <Button
                             size="icon"
-                            className="h-8 w-8 rounded-full bg-green-500 text-white shadow-md hover:bg-green-600 border-none"
+                            className="h-8 w-8 rounded-full bg-accent text-black shadow-md hover:bg-black/50 hover:text-white border-none"
                             onClick={(e) => {
                               e.stopPropagation(); // Evita que suene la canción al hacer clic aquí
                               openAddModal(song);

@@ -1,6 +1,6 @@
 const Playlist = require("../models/playlistModel");
 const Song = require("../models/songModel");
-const { create } = require("../models/songModel");
+const path = require("path");
 
 // @desc    Create a new playlist
 // @route   POST /api/playlists
@@ -13,10 +13,9 @@ const createPlaylist = async (req, res) => {
     const { name } = req.body;
 
     if (!name) {
-      res
+      return res
         .status(400)
         .json({ message: "El nombre de la playlist es obligatorio" });
-      return;
     }
 
     // Create a new playlist document in the database
@@ -46,17 +45,16 @@ const getUserPlaylists = async (req, res) => {
   }
 };
 
-// @desc Add a song to a playlist
-// // @route PUT /api/playlists/:id/add
-// // @access Private
-// // Handler function to add a song to a playlist
+// @desc    Add a song to a playlist
+// @route   PUT /api/playlists/:id/add
+// @access  Private
 const addSongToPlaylist = async (req, res) => {
   try {
     // Extract songId from request body and playlistId from request params
     const { songId } = req.body;
     const { id: playlistId } = req.params;
 
-    // Check if the song existsconst
+    // Check if the song exists
     song = await Song.findById(songId);
     if (!song) {
       return res.status(404).json({ message: "Canción no encontrada" });
@@ -76,14 +74,18 @@ const addSongToPlaylist = async (req, res) => {
     }
 
     // Check if the song is already in the playlist
-    if (playlist.songs.includes(songId)) {
+    const songExists = playlist.songs.find(
+      (item) => item.song.toString() === songId
+    );
+    if (songExists) {
       return res
         .status(400)
         .json({ message: "La canción ya está en la playlist" });
     }
 
     // If its all ok, add the song to the playlist
-    playlist.songs.push(songId);
+    playlist.songs.push({ song: songId });
+
     await playlist.save();
     res.status(200).json(playlist);
   } catch (error) {
@@ -91,20 +93,19 @@ const addSongToPlaylist = async (req, res) => {
   }
 };
 
-// @desc Get a playlist by ID (with detailed songs)
-// @route GET /api/playlist/:id
-// @access Private
+// @desc    Get a playlist by ID (with detailed songs)
+// @route   GET /api/playlists/:id
+// @access  Private
 const getPlaylistById = async (req, res) => {
   try {
     const { id } = req.params;
 
     // We search for the playlist and "fill" the 'songs' field with the actual data
-    const playlist = await Playlist.findById(id).populate("songs");
+    const playlist = await Playlist.findById(id).populate("songs.song");
 
     if (!playlist) {
       return res.status(404).json({ message: "Playlist no encontrada" });
     }
-
     res.status(200).json(playlist);
   } catch (error) {
     res.status(500).json({ message: `Error del servidor: ${error.message}` });
@@ -135,7 +136,7 @@ const removeSongFromPlaylist = async (req, res) => {
 
     // Filter the array of songs to remove the song with the given ID
     playlist.songs = playlist.songs.filter(
-      (song) => song.toString() !== songId
+      (item) => item.song.toString() !== songId
     );
 
     await playlist.save();
@@ -169,6 +170,39 @@ const deletePlaylist = async (req, res) => {
   }
 };
 
+// @desc    Edit a playlist (name, description, image)
+// @route   PUT /api/playlists/:id
+// @access  Private
+const editPlaylist = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description } = req.body;
+    const playlist = await Playlist.findById(id);
+
+    if (!playlist)
+      return res.status(404).json({ message: "Playlist no encontrada" });
+    if (playlist.owner.toString() !== req.user._id.toString())
+      return res.status(403).json({ message: "No autorizado" });
+
+    if (name) playlist.name = name;
+    if (description) playlist.description = description;
+
+    // Handle image upload
+    if (req.file) {
+      playlist.coverImagePath = path.join(
+        "uploads",
+        "covers",
+        req.file.filename
+      );
+    }
+
+    await playlist.save();
+    res.status(200).json(playlist);
+  } catch (error) {
+    res.status(500).json({ message: `Error del servidor: ${error.message}` });
+  }
+};
+
 module.exports = {
   createPlaylist,
   getUserPlaylists,
@@ -176,4 +210,5 @@ module.exports = {
   getPlaylistById,
   removeSongFromPlaylist,
   deletePlaylist,
+  editPlaylist,
 };
