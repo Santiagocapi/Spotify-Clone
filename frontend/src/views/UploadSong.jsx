@@ -1,157 +1,193 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
+// Context
 import { useAuthContext } from "../context/AuthContext";
 
 // UI Components (Shadcn UI)
+import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
+// Lucide React Icons
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Upload,
+  Music,
+  X,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
 
 function UploadSong() {
-  const [title, setTitle] = useState("");
-  const [artist, setArtist] = useState("");
-  const [album, setAlbum] = useState("");
-  const [file, setFile] = useState(null); // Status for the file
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-
   const { user } = useAuthContext();
-  const navigate = useNavigate();
+
+  const [files, setFiles] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState(null);
+  const [message, setMessage] = useState("");
 
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      // Add new files to the list
+      const newFiles = Array.from(e.target.files);
+      setFiles((prev) => [...prev, ...newFiles]);
+      setUploadStatus(null);
+    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
+  // Delete file from list before upload
+  const removeFile = (index) => {
+    setFiles(files.filter((_, i) => i !== index));
+  };
 
-    if (!title || !artist || !file) {
-      setError("Título, artista y archivo son obligatorios");
-      return;
-    }
+  // Send to the backend
+  const handleUpload = async () => {
+    if (files.length === 0) return;
 
-    // Create a FormData object (necessary to send files)
+    setIsUploading(true);
     const formData = new FormData();
-    formData.append("title", title);
-    formData.append("artist", artist);
-    formData.append("album", album || "Sencillo");
-    formData.append("song", file); // 'song' must match upload.single('song') from the backend
 
-    setLoading(true);
+    // Add each file with the name 'audio' (matches songRoutes.js)
+    files.forEach((file) => {
+      formData.append("audio", file);
+    });
 
     try {
-      // Send to the backend with the token
-
-      await axios.post("/api/songs/upload", formData, {
+      const res = await axios.post("/api/songs/bulk", formData, {
         headers: {
-          "Content-Type": "multipart/form-data", // ¡Importante para archivos!
+          "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${user.token}`,
         },
       });
-
-      // If it goes well, return to the Home page
-      navigate("/");
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.message || "Error al subir la canción");
+      setUploadStatus("success");
+      setMessage(`¡Listo! ${res.data.details.length} canciones añadidas.`);
+      setFiles([]); // Clear the list after success
+    } catch (error) {
+      console.error(error);
+      setUploadStatus("error");
+      setMessage("Hubo un error al subir los archivos.");
     } finally {
-      setLoading(false);
+      setIsUploading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[80vh] p-4">
-      <Card className="w-full max-w-lg shadow-lg border-border bg-card">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center text-primary">
-            Subir Música
-          </CardTitle>
-          <CardDescription className="text-center text-muted-foreground">
-            Añade tus archivos MP3 a la biblioteca pública
-          </CardDescription>
-        </CardHeader>
+    <div className="flex flex-col items-center justify-center min-h-[80vh] p-6 animate-in fade-in zoom-in duration-500">
+      <div className="max-w-xl w-full space-y-8">
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-black tracking-tight text-primary">
+            Subir Canciones
+          </h1>
+          <p className="text-muted-foreground">
+            Arrastra tus archivos MP3. Detectaremos automáticamente título,
+            artista y portada.
+          </p>
+        </div>
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="bg-destructive/10 text-destructive text-sm text-center font-medium p-3 rounded-md border border-destructive/20">
-                {error}
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Título</Label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ej. Billie Jean"
-                  className="bg-background"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="artist">Artista</Label>
-                <Input
-                  id="artist"
-                  value={artist}
-                  onChange={(e) => setArtist(e.target.value)}
-                  placeholder="Ej. Michael Jackson"
-                  className="bg-background"
-                />
-              </div>
+        <Card className="border-dashed border-2 border-primary/20 bg-muted/30 hover:bg-muted/50 transition-colors">
+          <CardContent className="flex flex-col items-center gap-6 p-10">
+            <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center text-primary shadow-sm">
+              <Upload size={40} />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="album">Álbum (Opcional)</Label>
-              <Input
-                id="album"
-                value={album}
-                onChange={(e) => setAlbum(e.target.value)}
-                placeholder="Ej. Thriller"
-                className="bg-background"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="file">Archivo MP3</Label>
-              <Input
-                id="file"
+            <div className="space-y-4 w-full text-center">
+              <label
+                htmlFor="music-upload"
+                className="cursor-pointer inline-flex items-center justify-center rounded-full text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-8 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transform duration-200"
+              >
+                Seleccionar Archivos
+              </label>
+              <input
+                id="music-upload"
                 type="file"
                 accept="audio/*"
+                multiple
+                className="hidden"
                 onChange={handleFileChange}
-                className="bg-background cursor-pointer file:text-primary file:font-medium"
               />
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                Soporta MP3, WAV, OGG
+              </p>
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="flex gap-3 pt-4">
-              <Link to="/" className="w-1/2">
-                <Button variant="outline" className="w-full" type="button">
-                  Cancelar
-                </Button>
-              </Link>
+        {/* FILES LIST */}
+        {files.length > 0 && (
+          <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
+            <div className="p-4 border-b bg-muted/20 flex justify-between items-center">
+              <h3 className="font-semibold text-sm">
+                Archivos listos ({files.length})
+              </h3>
               <Button
-                type="submit"
-                className="w-1/2 font-bold"
-                disabled={loading}
+                variant="ghost"
+                size="sm"
+                onClick={() => setFiles([])}
+                className="text-xs h-7 text-destructive hover:text-destructive"
               >
-                {loading ? "Subiendo..." : "Subir Canción"}
+                Limpiar todo
               </Button>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+            <ScrollArea className="h-48">
+              <div className="p-2 space-y-1">
+                {files.map((f, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-2 rounded-md hover:bg-accent group text-sm"
+                  >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                        <Music size={14} />
+                      </div>
+                      <span className="truncate font-medium">{f.name}</span>
+                    </div>
+                    <button
+                      onClick={() => removeFile(i)}
+                      className="text-muted-foreground hover:text-destructive p-1"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+            <div className="p-4 border-t bg-muted/20">
+              <Button
+                onClick={handleUpload}
+                disabled={isUploading}
+                className="w-full font-bold"
+                size="lg"
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                    Procesando...
+                  </>
+                ) : (
+                  `Subir ${files.length} Canciones`
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* STATUS MESSAGES */}
+        {uploadStatus === "success" && (
+          <div className="flex items-center justify-center gap-3 text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400 p-4 rounded-lg border border-green-200 dark:border-green-800 animate-in slide-in-from-bottom-2">
+            <CheckCircle2 size={24} />
+            <div className="text-sm font-medium">{message}</div>
+          </div>
+        )}
+
+        {uploadStatus === "error" && (
+          <div className="flex items-center justify-center gap-3 text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400 p-4 rounded-lg border border-red-200 dark:border-red-800 animate-in slide-in-from-bottom-2">
+            <AlertCircle size={24} />
+            <div className="text-sm font-medium">{message}</div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
