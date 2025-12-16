@@ -13,10 +13,9 @@ const createPlaylist = async (req, res) => {
     const { name } = req.body;
 
     if (!name) {
-      res
+      return res
         .status(400)
         .json({ message: "El nombre de la playlist es obligatorio" });
-      return;
     }
 
     // Create a new playlist document in the database
@@ -46,10 +45,9 @@ const getUserPlaylists = async (req, res) => {
   }
 };
 
-// @desc Add a song to a playlist
-// // @route PUT /api/playlists/:id/add
-// // @access Private
-// // Handler function to add a song to a playlist
+// @desc    Add a song to a playlist
+// @route   PUT /api/playlists/:id/add
+// @access  Private
 const addSongToPlaylist = async (req, res) => {
   try {
     // Extract songId from request body and playlistId from request params
@@ -95,20 +93,19 @@ const addSongToPlaylist = async (req, res) => {
   }
 };
 
-// @desc Get a playlist by ID (with detailed songs)
-// @route GET /api/playlist/:id
-// @access Private
+// @desc    Get a playlist by ID (with detailed songs)
+// @route   GET /api/playlists/:id
+// @access  Private
 const getPlaylistById = async (req, res) => {
   try {
     const { id } = req.params;
 
     // We search for the playlist and "fill" the 'songs' field with the actual data
-    const playlist = await Playlist.findById(id).populate("songs");
+    const playlist = await Playlist.findById(id).populate("songs.song");
 
     if (!playlist) {
       return res.status(404).json({ message: "Playlist no encontrada" });
     }
-
     res.status(200).json(playlist);
   } catch (error) {
     res.status(500).json({ message: `Error del servidor: ${error.message}` });

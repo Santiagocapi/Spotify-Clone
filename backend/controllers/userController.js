@@ -128,15 +128,6 @@ const getLikedSongs = async (req, res) => {
     // Find the user and populate the likedSongs field
     const user = await User.findById(req.user._id).populate("likedSongs");
 
-    // Return the liked songs in a playlist-like format
-    res.status(200).json({
-      _id: "liked-songs",
-      name: "Tus Me Gusta",
-      description: "Tus canciones favoritas en un solo lugar",
-      coverImagePath: null,
-      songs: user.likedSongs,
-      isLikedPlaylist: true,
-    });
     // Return an array if likedSongs is empty or no exists
     res.status(200).json(user.likedSongs || []);
   } catch (error) {

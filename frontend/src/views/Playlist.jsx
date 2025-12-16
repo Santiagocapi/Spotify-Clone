@@ -73,6 +73,10 @@ function Playlist() {
         });
         setPlaylist(playlistRes.data);
 
+        // We set the edition states
+        setEditName(playlistRes.data.name);
+        setEditDesc(playlistRes.data.description || "");
+
         // We make the GET request to our backend to get all songs
         const songsRes = await axios.get("/api/songs");
         setAllSongs(songsRes.data);
@@ -86,21 +90,14 @@ function Playlist() {
           // SECURITY CHECK:
           // If data is an array, we map it. If not, we use an empty array.
           if (Array.isArray(userLikesRes.data)) {
-            const ids = userLikesRes.data.map((song) => song._id);
+            const ids = userLikesRes.data.map((s) => s._id);
             setLikedSongs(ids);
           } else {
-            console.warn(
-              "La respuesta de likes no fue un array:",
-              userLikesRes.data
-            );
-            setLikedSongs([]); // If it returns null or something weird, we assume 0 likes
+            setLikedSongs([]);
           }
         } catch (likeError) {
-          console.warn(
-            "No se pudieron cargar los likes (posiblemente usuario nuevo):",
-            likeError
-          );
-          setLikedSongs([]); // We fail silently to not break the entire page
+          console.warn("Likes no cargados", likeErr);
+          setLikedSongs([]);
         }
       } catch (err) {
         console.error(err);
@@ -119,13 +116,10 @@ function Playlist() {
   const handleUpdatePlaylist = async (e) => {
     e.preventDefault();
     setIsSaving(true);
-
     const formData = new FormData();
     formData.append("name", editName);
     formData.append("description", editDesc);
-    if (editFile) {
-      formData.append("coverImage", editFile);
-    }
+    if (editFile) formData.append("coverImage", editFile);
 
     try {
       const res = await axios.put(`/api/playlists/${id}`, formData, {
@@ -210,7 +204,7 @@ function Playlist() {
 
       // Update the liked songs in the screen
       if (likedSongs.includes(songId)) {
-        setLikedSongs(likedSongs.filter((id) => id !== songId)); // Remove like
+        setLikedSongs(likedSongs.filter((lid) => lid !== songId));
       } else {
         setLikedSongs([...likedSongs, songId]); // Add like
       }
@@ -228,33 +222,22 @@ function Playlist() {
   if (!playlist) return <div className="p-10 text-center">No encontrada</div>;
 
   // Filter songs to no repeat them
-  const songsToAdd = allSongs.filter((song) => {
-    // If playlist.songs doesn't exist or isn't an array, we assume it's empty
-    if (!Array.isArray(playlist.songs)) return true;
-
+  const songsToAdd = allSongs.filter((s) => {
+    if (!playlist.songs) return true;
     return !playlist.songs.some((item) => {
-      // CASE 1: New Structure (Object with .song)
-      if (item && item.song && item.song._id) {
-        return item.song._id === song._id;
-      }
-      // CASE 2: Old Structure (Solo ID string)
-      if (typeof item === "string") {
-        return item === song._id;
-      }
-      // CASE 3: Song Object directly (if populate changed)
-      if (item && item._id) {
-        return item._id === song._id;
-      }
-      return false;
+      // Support for new structure (object) and old (string)
+      const itemId = item.song ? item.song._id : item;
+      return itemId === s._id;
     });
   });
+
   return (
     <div className="space-y-6 pb-20">
       {/* PLAYLIST HEADER */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-end bg-gradient-to-b from-zinc-100/50 to-background p-6 rounded-xl">
-        {/* Playlist cover */}
+      <div className="flex flex-col gap-6 md:flex-row md:items-end bg-gradient-to-br from-secondary to-accent p-6 rounded-xl">
+        {/* COVER IMAGE */}
         <div
-          className="group relative flex h-52 w-52 shrink-0 items-center justify-center overflow-hidden rounded-lg shadow-xl cursor-pointer bg-muted"
+          className="group relative flex h-52 w-52 shrink-0 items-center justify-center overflow-hidden rounded-lg shadow-xl cursor-pointer bg-card border-4 border-background"
           onClick={() => setIsEditOpen(true)}
         >
           {playlist.coverImagePath ? (
@@ -264,14 +247,15 @@ function Playlist() {
                 "/"
               )}`}
               alt={playlist.name}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
-            <Music className="h-20 w-20 text-muted-foreground/50" />
+            <div className="flex h-full w-full items-center justify-center bg-accent/50">
+              <Music className="h-20 w-20 text-muted-foreground/50" />
+            </div>
           )}
-
           {/* Overlay edit Image */}
-          <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
             <Camera className="h-8 w-8 mb-2" />
             <span className="text-sm font-medium">Editar foto</span>
           </div>
@@ -279,31 +263,27 @@ function Playlist() {
 
         {/* PLAYLIST INFO */}
         <div className="flex-1 space-y-4">
-          <div className="space-y-1">
+          <div>
             <h5 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Playlist
             </h5>
-            {/* TITLE (Click to edit) */}
             <h1
-              className="text-2xl font-black tracking-tight sm:text-6xl hover:underline cursor-pointer decoration-4 decoration-primary"
+              className="text-4xl font-black tracking-tight sm:text-6xl hover:underline cursor-pointer decoration-primary decoration-4 text-foreground"
               onClick={() => setIsEditOpen(true)}
             >
               {playlist.name}
             </h1>
-            <p className="text-muted-foreground pt-4">
+            <p className="text-muted-foreground pt-4 text-sm font-medium">
               {playlist.description || "Sin descripción"}
             </p>
           </div>
-
           <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
-            {/* User Name, user avatar comming soon */}
             <span className="text-foreground">Tu Playlist</span>
             <span>•</span>
             <span>{playlist.songs.length} canciones</span>
           </div>
         </div>
       </div>
-
       {/* Action Buttons */}
       <div className="flex items-center justify-between px-4">
         <div className="flex gap-4">
@@ -432,11 +412,11 @@ function Playlist() {
                       </span>
                       <button
                         onClick={() => playSong(song)}
-                        className="hidden group-hover:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 items-center justify-center text-foreground"
+                        className="hidden group-hover:flex absolute inset-0 items-center justify-center text-primary"
                       >
                         <PlayCircle
                           className={cn(
-                            "h-5 w-5",
+                            "h-6 w-6 hover:scale-110 transition-transform",
                             isCurrentSong && "fill-primary text-primary"
                           )}
                         />

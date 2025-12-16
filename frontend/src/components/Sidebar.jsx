@@ -15,10 +15,9 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Heart,
-  Settings,
   ListMusic,
   Disc,
+  Heart,
 } from "lucide-react";
 
 // UI Components (Shadcn UI)
@@ -174,7 +173,7 @@ function Sidebar() {
           </div>
         )}
 
-        {/* SCROLLABLE CONTENT (Navigation) */}
+        {/* Navigation */}
         <ScrollArea className="flex-1 px-3">
           <div className="space-y-1 py-2">
             {navItems.map((item) => (
@@ -184,45 +183,35 @@ function Sidebar() {
 
           <Separator className="my-4 opacity-50" />
 
-          <div className="space-y-1 py-2">
-            {!isCollapsed && (
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="mb-2 px-4 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
-                  <Library className="h-4 w-4 inline-block" /> Tu Biblioteca
-                </h3>
-              </div>
-            )}
-            {libraryItems.map((item) => (
-              <NavButton key={item.label} {...item} />
-            ))}
-          </div>
-
+          {/* PLAYLISTS */}
           <div className="mt-4">
-            {!isCollapsed && playlists.length > 0 && (
+            {!isCollapsed && (
               <h3 className="mb-2 px-4 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
-                Playlists
+                Tus Playlists
               </h3>
             )}
 
             <div className="space-y-1">
+              {/* liked songs button */}
+              <NavButton
+                icon={Heart}
+                label="Tus Me Gusta"
+                path="/collection/tracks"
+                className="text-primary hover:text-primary hover:bg-primary/10"
+              />
+
+              {/* playlist list */}
               {playlists.map((playlist) => (
                 <NavButton
                   key={playlist._id}
-                  icon={Disc} // O puedes usar una imagen pequeña si la tienes
+                  icon={Disc}
                   label={playlist.name}
                   path={`/playlist/${playlist._id}`}
                 />
               ))}
-              {playlists.length === 0 && !isCollapsed && (
-                <p className="px-4 text-sm text-muted-foreground">
-                  Sin playlists
-                </p>
-              )}
             </div>
           </div>
         </ScrollArea>
-
-        {/* Playlists */}
 
         {/* FOOTER ( User + Logout Button) */}
         <div className="p-3 mt-auto border-t border-border bg-background/50">
