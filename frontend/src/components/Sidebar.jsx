@@ -68,7 +68,6 @@ function Sidebar() {
   const navItems = [
     { icon: Home, label: "Inicio", path: "/" },
     { icon: Search, label: "Explorar", path: "/explore" },
-    { icon: Heart, label: "Tus Me Gusta", path: "/collection/tracks" },
     { icon: ListMusic, label: "Playlists", path: "/playlists" },
   ];
 
@@ -80,6 +79,7 @@ function Sidebar() {
   // Auxiliary component to render buttons with Tooltip
   const NavButton = ({
     icon: Icon,
+    image,
     label,
     path,
     onClick,
@@ -99,7 +99,17 @@ function Sidebar() {
           className
         )}
       >
-        <Icon size={20} />
+        {/* If it has an image, we show it, otherwise we show the icon */}
+        {image ? (
+          <img
+            src={image}
+            alt={label}
+            className="h-5 w-5 rounded-sm object-cover shrink-0"
+          />
+        ) : (
+          <Icon size={20} className="shrink-0" />
+        )}
+
         {!isCollapsed && <span className="truncate">{label}</span>}
       </Button>
     );
@@ -199,12 +209,19 @@ function Sidebar() {
                 path="/collection/tracks"
                 className="text-primary hover:text-primary hover:bg-primary/10"
               />
-
               {/* playlist list */}
               {playlists.map((playlist) => (
                 <NavButton
                   key={playlist._id}
                   icon={Disc}
+                  image={
+                    playlist.coverImagePath
+                      ? `http://localhost:3000/${playlist.coverImagePath.replace(
+                          /\\/g,
+                          "/"
+                        )}`
+                      : null
+                  }
                   label={playlist.name}
                   path={`/playlist/${playlist._id}`}
                 />
