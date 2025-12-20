@@ -23,6 +23,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 
 // Lucide React Icons
 import { PlusCircle, Music, Disc, Plus } from "lucide-react";
@@ -78,19 +79,21 @@ function Home() {
   };
 
   // Call the API to add songs
-  const handleAddToPlaylist = async (playlistId) => {
+  const handleAddToPlaylist = async (playlistId, playlistName) => {
     try {
       await axios.put(
         `/api/playlists/${playlistId}/add`,
         { songId: songToAdd._id },
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
-      alert(`¡"${songToAdd.title}" agregada a la playlist!`);
-      setShowModal(false); // Close modal
+      toast.success(`"${songToAdd.title}" se añadió a ${playlistName}`);
+      setIsModalOpen(false); // Close modal
       setSongToAdd(null); // Clean selection
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Error al agregar la canción");
+      toast.error(
+        err.response?.data?.message || "No se pudo agregar la canción."
+      );
     }
   };
 
@@ -282,7 +285,7 @@ function Home() {
                 {playlists.map((p) => (
                   <div
                     key={p._id}
-                    onClick={() => handleAddToPlaylist(p._id)}
+                    onClick={() => handleAddToPlaylist(p._id, p.name)}
                     className="flex cursor-pointer items-center justify-between rounded-lg p-3 transition-colors hover:bg-accent"
                   >
                     <div className="flex items-center gap-3">
