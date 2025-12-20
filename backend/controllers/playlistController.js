@@ -122,25 +122,21 @@ const removeSongFromPlaylist = async (req, res) => {
     const { id: playlistId } = req.params;
 
     const playlist = await Playlist.findById(playlistId);
-
     if (!playlist) {
       return res.status(404).json({ message: "Playlist no encontrada" });
     }
 
     // Check if the user is the owner of the playlist
     if (playlist.owner.toString() !== req.user._id.toString()) {
-      return res
-        .status(403)
-        .json({ message: "Acceso denegado: no eres el dueño de la playlist" });
+      return res.status(403).json({ message: "No autorizado" });
     }
 
     // Filter the array of songs to remove the song with the given ID
-    playlist.songs = playlist.songs.filter(
-      (item) => item.song.toString() !== songId
-    );
+    await Playlist.findByIdAndUpdate(playlistId, {
+      $pull: { songs: { song: songId } },
+    });
 
-    await playlist.save();
-    res.status(200).json(playlist);
+    res.status(200).json({ message: "Canción eliminada" });
   } catch (error) {
     res.status(500).json({ message: `Error del servidor: ${error.message}` });
   }
@@ -163,7 +159,7 @@ const deletePlaylist = async (req, res) => {
       return res.status(403).json({ message: "No autorizado" });
     }
 
-    await playlist.deleteOne();
+    await Playlist.findByIdAndDelete(id);
     res.status(200).json({ message: "Playlist eliminada correctamente" });
   } catch (error) {
     res.status(500).json({ message: `Error del servidor: ${error.message}` });

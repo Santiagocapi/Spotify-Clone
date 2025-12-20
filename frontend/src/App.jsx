@@ -8,6 +8,7 @@ import "./index.css";
 // Components
 import Player from "@/components/Player";
 import Sidebar from "@/components/Sidebar";
+import { Toaster } from "@/components/ui/sonner";
 
 function App() {
   const { user, dispatch } = useAuthContext();
@@ -53,6 +54,8 @@ function App() {
       <div className="col-span-2 z-50 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <Player />
       </div>
+      {/* Toast for notifications */}
+      <Toaster />
     </div>
   );
 }

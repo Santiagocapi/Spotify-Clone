@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -141,39 +142,53 @@ function Playlist() {
   const handleAddSong = async (songId) => {
     try {
       // We make the GET request to our backend to add the song to the playlist
-      const updatedPlaylistRes = await axios.get(`/api/playlists/${id}`, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
-
-      // Update the playlist in the screen with the response from the server
-      setPlaylist(updatedPlaylistRes.data);
-      alert("Canción agregada con éxito");
-    } catch (err) {
-      alert(err.response?.data?.message || "Error al agregar canción");
-    }
-  };
-
-  // Function to Delete Song
-  const handleRemoveSong = async (songId) => {
-    if (!window.confirm("¿Quitar esta canción de la lista?")) return;
-
-    try {
       await axios.put(
-        `/api/playlists/${id}/remove`,
+        `/api/playlists/${id}/add`,
         { songId },
         {
           headers: { Authorization: `Bearer ${user.token}` },
         }
       );
 
-      // Update the playlist in the screen with the response from the server
+      toast.success("Canción añadida correctamente");
+
       const res = await axios.get(`/api/playlists/${id}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
+
+      // Update the playlist in the screen with the response from the server
       setPlaylist(res.data);
     } catch (err) {
-      alert(err.response?.data?.message || "Error al quitar canción");
+      toast.error(err.response?.data?.message || "Error al añadir la canción");
     }
+  };
+
+  // Function to Delete Song
+  const handleRemoveSong = async (songId) => {
+    // Use toast.promise for a super smooth experience (Loading -> Success/Error)
+    toast.promise(
+      // The promise: Delete and then Reload
+      async () => {
+        await axios.put(
+          `/api/playlists/${id}/remove`,
+          { songId },
+          {
+            headers: { Authorization: `Bearer ${user.token}` },
+          }
+        );
+
+        // Update the playlist in the screen with the response from the server
+        const res = await axios.get(`/api/playlists/${id}`, {
+          headers: { Authorization: `Bearer ${user.token}` },
+        });
+        setPlaylist(res.data);
+      },
+      {
+        loading: "Eliminando canción...",
+        success: "Canción eliminada de la playlist",
+        error: "Error al eliminar la canción",
+      }
+    );
   };
 
   // Funciont to Delete Playlist
