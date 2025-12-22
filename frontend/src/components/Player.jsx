@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { usePlayer } from "../context/PlayerContext";
 // Time Function
 import { formatTime } from "@/lib/utils";
@@ -17,69 +17,50 @@ import {
 } from "lucide-react";
 
 function Player() {
-  // Use the context
+  // Use the context (Added audioRef, playNext, playPrevious)
   const {
     currentSong,
     isPlaying,
-    setIsPlaying,
-    playSong,
-    pauseSong,
-    resumeSong,
+    togglePlay,
+    playNext,
+    playPrevious,
+    audioRef, // We use the global audio instance from context
   } = usePlayer();
-
-  // Create the ref for the audio element
-  const audioRef = useRef(null);
 
   // State to control the volume and progress
   const [volume, setVolume] = useState([50]);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  // UseEffect to handle play/pause
+  // UseEffect to handle Time Updates (Progress Bar)
   useEffect(() => {
-    if (!audioRef.current) return;
+    const audio = audioRef.current;
+    if (!audio) return;
 
-    // If there is a song selected..
-    if (currentSong) {
-      if (isPlaying) {
-        // And the state is Playing, play the song
-        // Use play() what is a promise
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((error) =>
-            console.error("Error al reproducir", error)
-          );
-        }
-      } else {
-        // And if the state is not playing, pause the song
-        audioRef.current.pause();
-      }
-    }
-  }, [currentSong, isPlaying]); // It runs every time the song changes or the play/pause button is pressed.
+    const updateTime = () => setCurrentTime(audio.currentTime);
+    const updateDuration = () => setDuration(audio.duration);
+
+    // Attach events
+    audio.addEventListener("timeupdate", updateTime);
+    audio.addEventListener("loadedmetadata", updateDuration);
+
+    // Cleanup events
+    return () => {
+      audio.removeEventListener("timeupdate", updateTime);
+      audio.removeEventListener("loadedmetadata", updateDuration);
+    };
+  }, [audioRef]);
 
   // UseEffect to handle volume
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume[0] / 100;
     }
-  }, [volume]);
+  }, [volume, audioRef]);
 
-  // Handle time update
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-    }
-  };
-
-  const handleLoadedMetadata = () => {
-    if (audioRef.current) {
-      setDuration(audioRef.current.duration);
-    }
-  };
-
+  // Handle seek (User drags the slider)
   const handleSeek = (value) => {
     if (audioRef.current) {
-      // El slider devuelve un array [valor], tomamos el primero
       const newTime = value[0];
       audioRef.current.currentTime = newTime;
       setCurrentTime(newTime);
@@ -88,21 +69,10 @@ function Player() {
 
   if (!currentSong) return null; // If no song is selected, we do not display the player.
 
-  const songUrl = currentSong.filePath
-    ? `http://localhost:3000/${currentSong.filePath.replace(/\\/g, "/")}`
-    : "";
-
+  // We construct the URLs (Optional: You could move this to a helper function)
   const coverUrl = currentSong.coverArtPath
     ? `http://localhost:3000/${currentSong.coverArtPath.replace(/\\/g, "/")}`
     : null;
-
-  const togglePlay = () => {
-    if (isPlaying) {
-      pauseSong();
-    } else {
-      resumeSong();
-    }
-  };
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -137,27 +107,30 @@ function Player() {
         {/* CONTROLS CENTER */}
         <div className="flex w-1/3 min-w-[300px] flex-col items-center justify-center gap-2">
           <div className="flex items-center gap-6">
+            {/* Skip Back Button */}
             <button
-              className="text-muted-foreground transition-colors hover:text-foreground"
-              disabled
+              onClick={playPrevious}
+              className="text-muted-foreground hover:text-foreground transition-colors hover:scale-110"
             >
               <SkipBack className="h-5 w-5" />
             </button>
 
+            {/* Play/Pause Button */}
             <button
               onClick={togglePlay}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105 focus:outline-none"
+              className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:scale-105 transition-transform shadow-md"
             >
               {isPlaying ? (
                 <Pause className="h-5 w-5 fill-current" />
               ) : (
-                <Play className="h-5 w-5 fill-current ml-0.5" />
+                <Play className="h-5 w-5 fill-current ml-1" />
               )}
             </button>
 
+            {/* Skip Forward Button */}
             <button
-              className="text-muted-foreground transition-colors hover:text-foreground"
-              disabled
+              onClick={playNext}
+              className="text-muted-foreground hover:text-foreground transition-colors hover:scale-110"
             >
               <SkipForward className="h-5 w-5" />
             </button>
@@ -165,7 +138,9 @@ function Player() {
 
           {/* PROGRESS BAR */}
           <div className="flex w-full items-center gap-2 text-xs text-muted-foreground">
-            <span className="w-8 text-right">{formatTime(currentTime)}</span>
+            <span className="w-10 text-right font-mono">
+              {formatTime(currentTime)}
+            </span>
 
             <Slider
               value={[currentTime]}
@@ -175,11 +150,11 @@ function Player() {
               className="w-full cursor-pointer"
             />
 
-            <span className="w-8">{formatTime(duration)}</span>
+            <span className="w-10 font-mono">{formatTime(duration)}</span>
           </div>
         </div>
 
-        {/* VOLUME */}
+        {/* RIGHT - VOLUME */}
         <div className="flex w-1/3 justify-end">
           <div className="flex w-full max-w-[120px] items-center gap-2">
             <Volume2 className="h-5 w-5 text-muted-foreground" />
@@ -194,19 +169,6 @@ function Player() {
           </div>
         </div>
       </div>
-
-      {/* AUDIO ELEMENT */}
-      {/* ref={audioRef} -> Connect this element to our 'audioRef' variable
-        src={songUrl} -> The URL of the MP3 file
-        onEnded -> When it finishes, we pause it    
-      */}
-      <audio
-        ref={audioRef}
-        src={songUrl}
-        onEnded={() => setIsPlaying(false)}
-        onTimeUpdate={handleTimeUpdate} // Se ejecuta cada segundo mientras reproduce
-        onLoadedMetadata={handleLoadedMetadata} // Se ejecuta al cargar la canción para saber la duración
-      />
     </div>
   );
 }

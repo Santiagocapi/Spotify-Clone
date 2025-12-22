@@ -197,7 +197,6 @@ function LikedSongs() {
         {songs.length === 0 && (
           <div className="py-20 text-center text-muted-foreground">
             <p>Aún no tienes canciones favoritas.</p>
-            <p className="text-sm mt-1">¡Explora y dales amor! ❤️</p>
           </div>
         )}
       </div>

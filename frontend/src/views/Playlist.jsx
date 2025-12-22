@@ -246,6 +246,10 @@ function Playlist() {
     });
   });
 
+  const playlistSongs = playlist.songs
+    .map((item) => item.song || item)
+    .filter(Boolean);
+
   return (
     <div className="space-y-6 pb-20">
       {/* PLAYLIST HEADER */}
@@ -396,20 +400,8 @@ function Playlist() {
             </TableHeader>
             <TableBody>
               {playlist.songs.map((item, index) => {
-                // Logic to detect which format we have
-                let song = null;
-                let addedAt = null;
-
-                if (item.song) {
-                  // New Format: { song: {...}, addedAt: ... }
-                  song = item.song;
-                  addedAt = item.addedAt;
-                } else if (item._id) {
-                  // Hybrid Format: item is the song directly (simple populate)
-                  song = item;
-                }
-
-                // If after all there is no valid song, skip this row
+                // Extract the song from the item
+                const song = item.song || item;
                 if (!song || !song._id) return null;
 
                 const isCurrentSong = currentSong?._id === song._id;
@@ -426,13 +418,12 @@ function Playlist() {
                         {index + 1}
                       </span>
                       <button
-                        onClick={() => playSong(song)}
+                        onClick={() => playSong(song, playlistSongs)}
                         className="hidden group-hover:flex absolute inset-0 items-center justify-center text-primary"
                       >
                         <PlayCircle
                           className={cn(
-                            "h-6 w-6 hover:scale-110 transition-transform",
-                            isCurrentSong && "fill-primary text-primary"
+                            "h-7 w-7 fill-primary text-primary hover:scale-110 transition-transform"
                           )}
                         />
                       </button>
