@@ -1,14 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom"; // useParams - To read the id from the URL,
-// useNavigate - To redirect when delete a playlist
+import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-// Context
 import { useAuthContext } from "../context/AuthContext";
 import { usePlayer } from "../context/PlayerContext";
-
 import { cn, formatTime } from "@/lib/utils";
 
-// UI Components (Shadcn UI)
+// UI Components
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -29,16 +26,14 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
-// Lucide React Icons
+// Icons
 import {
   Trash2,
   Clock3,
   Music,
   PlayCircle,
-  ArrowLeft,
   Edit2,
   Camera,
   Heart,
@@ -48,14 +43,14 @@ function Playlist() {
   const { id } = useParams();
   const { user } = useAuthContext();
   const navigate = useNavigate();
-  const { playSong, currentSong, isPlaying } = usePlayer(); // To play a song
+  const { playSong, currentSong, isPlaying } = usePlayer();
 
   const [playlist, setPlaylist] = useState(null);
-  const [allSongs, setAllSongs] = useState([]); // Songs list and add songs
+  const [allSongs, setAllSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showAddSection, setShowAddSection] = useState(false); // To show/hide the panel to add songs
-  const [likedSongs, setLikedSongs] = useState([]); // To store the liked songs
+  const [showAddSection, setShowAddSection] = useState(false);
+  const [likedSongs, setLikedSongs] = useState([]);
 
   // Edition states
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -64,32 +59,23 @@ function Playlist() {
   const [editFile, setEditFile] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Function to upload files (playlist and all the songs)
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // We make the GET request to our backend using populate to get the songs details
         const playlistRes = await axios.get(`/api/playlists/${id}`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         setPlaylist(playlistRes.data);
-
-        // We set the edition states
         setEditName(playlistRes.data.name);
         setEditDesc(playlistRes.data.description || "");
 
-        // We make the GET request to our backend to get all songs
         const songsRes = await axios.get("/api/songs");
         setAllSongs(songsRes.data);
 
         try {
-          // We make the GET request to our backend to get the liked songs
           const userLikesRes = await axios.get("/api/users/liked", {
             headers: { Authorization: `Bearer ${user.token}` },
           });
-
-          // SECURITY CHECK:
-          // If data is an array, we map it. If not, we use an empty array.
           if (Array.isArray(userLikesRes.data)) {
             const ids = userLikesRes.data.map((s) => s._id);
             setLikedSongs(ids);
@@ -97,7 +83,6 @@ function Playlist() {
             setLikedSongs([]);
           }
         } catch (likeError) {
-          console.warn("Likes no cargados", likeErr);
           setLikedSongs([]);
         }
       } catch (err) {
@@ -108,12 +93,10 @@ function Playlist() {
       }
     };
 
-    if (user) {
-      fetchData();
-    }
+    if (user) fetchData();
   }, [id, user]);
 
-  // Function to edit playlist
+  // Update playlist
   const handleUpdatePlaylist = async (e) => {
     e.preventDefault();
     setIsSaving(true);
@@ -129,55 +112,47 @@ function Playlist() {
           Authorization: `Bearer ${user.token}`,
         },
       });
-      setPlaylist(res.data); // Update playlist in the screen
-      setIsEditOpen(false); // Exit modal
+      setPlaylist(res.data);
+      setIsEditOpen(false);
+      toast.success("Playlist actualizada");
     } catch (err) {
-      alert("Error al actualizar playlist");
+      toast.error("Error al actualizar playlist");
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Function to Add Songs
+  // Add song to playlist
   const handleAddSong = async (songId) => {
     try {
-      // We make the GET request to our backend to add the song to the playlist
       await axios.put(
         `/api/playlists/${id}/add`,
         { songId },
         {
           headers: { Authorization: `Bearer ${user.token}` },
-        }
+        },
       );
-
       toast.success("Canción añadida correctamente");
-
       const res = await axios.get(`/api/playlists/${id}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
-
-      // Update the playlist in the screen with the response from the server
       setPlaylist(res.data);
     } catch (err) {
       toast.error(err.response?.data?.message || "Error al añadir la canción");
     }
   };
 
-  // Function to Delete Song
+  // Remove song from playlist
   const handleRemoveSong = async (songId) => {
-    // Use toast.promise for a super smooth experience (Loading -> Success/Error)
     toast.promise(
-      // The promise: Delete and then Reload
       async () => {
         await axios.put(
           `/api/playlists/${id}/remove`,
           { songId },
           {
             headers: { Authorization: `Bearer ${user.token}` },
-          }
+          },
         );
-
-        // Update the playlist in the screen with the response from the server
         const res = await axios.get(`/api/playlists/${id}`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
@@ -187,26 +162,26 @@ function Playlist() {
         loading: "Eliminando canción...",
         success: "Canción eliminada de la playlist",
         error: "Error al eliminar la canción",
-      }
+      },
     );
   };
 
-  // Funciont to Delete Playlist
+  // Delete playlist
   const handleDeletePlaylist = async () => {
     if (!window.confirm("¿Estás seguro de eliminar esta playlist entera?"))
       return;
-
     try {
       await axios.delete(`/api/playlists/${id}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
-      navigate("/"); // Back to home
+      navigate("/");
+      toast.success("Playlist eliminada");
     } catch (err) {
-      alert(err.response?.data?.message || "Error al eliminar playlist");
+      toast.error(err.response?.data?.message || "Error al eliminar playlist");
     }
   };
 
-  // Function to Like Song
+  // Like songs
   const handleLike = async (songId) => {
     try {
       await axios.put(
@@ -214,14 +189,12 @@ function Playlist() {
         {},
         {
           headers: { Authorization: `Bearer ${user.token}` },
-        }
+        },
       );
-
-      // Update the liked songs in the screen
       if (likedSongs.includes(songId)) {
         setLikedSongs(likedSongs.filter((lid) => lid !== songId));
       } else {
-        setLikedSongs([...likedSongs, songId]); // Add like
+        setLikedSongs([...likedSongs, songId]);
       }
     } catch (err) {
       console.error(err);
@@ -236,35 +209,31 @@ function Playlist() {
     return <div className="p-10 text-center text-destructive">{error}</div>;
   if (!playlist) return <div className="p-10 text-center">No encontrada</div>;
 
-  // Filter songs to no repeat them
   const songsToAdd = allSongs.filter((s) => {
     if (!playlist.songs) return true;
     return !playlist.songs.some((item) => {
-      // Support for new structure (object) and old (string)
-      const itemId = item.song ? item.song._id : item;
+      if (!item.song && !item._id) return false;
+      const itemId = item.song ? item.song._id || item.song : item._id;
       return itemId === s._id;
     });
   });
 
+  // Clean playlist songs
   const playlistSongs = playlist.songs
     .map((item) => item.song || item)
-    .filter(Boolean);
+    .filter((song) => song && song.title);
 
   return (
     <div className="space-y-6 pb-20">
-      {/* PLAYLIST HEADER */}
+      {/* HEADER */}
       <div className="flex flex-col gap-6 md:flex-row md:items-end bg-gradient-to-br from-secondary to-accent p-6 rounded-xl">
-        {/* COVER IMAGE */}
         <div
           className="group relative flex h-52 w-52 shrink-0 items-center justify-center overflow-hidden rounded-lg shadow-xl cursor-pointer bg-card border-4 border-background"
           onClick={() => setIsEditOpen(true)}
         >
           {playlist.coverImagePath ? (
             <img
-              src={`http://localhost:3000/${playlist.coverImagePath.replace(
-                /\\/g,
-                "/"
-              )}`}
+              src={`http://localhost:3000/${playlist.coverImagePath.replace(/\\/g, "/")}`}
               alt={playlist.name}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
@@ -273,14 +242,12 @@ function Playlist() {
               <Music className="h-20 w-20 text-muted-foreground/50" />
             </div>
           )}
-          {/* Overlay edit Image */}
           <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
             <Camera className="h-8 w-8 mb-2" />
             <span className="text-sm font-medium">Editar foto</span>
           </div>
         </div>
 
-        {/* PLAYLIST INFO */}
         <div className="flex-1 space-y-4">
           <div>
             <h5 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
@@ -299,11 +266,12 @@ function Playlist() {
           <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
             <span className="text-foreground">Tu Playlist</span>
             <span>•</span>
-            <span>{playlist.songs.length} canciones</span>
+            <span>{playlistSongs.length} canciones</span>
           </div>
         </div>
       </div>
-      {/* Action Buttons */}
+
+      {/* ACTION BUTTONS */}
       <div className="flex items-center justify-between px-4">
         <div className="flex gap-4">
           <Button
@@ -313,7 +281,6 @@ function Playlist() {
           >
             {showAddSection ? "Listo" : "Añadir canciones"}
           </Button>
-
           <Button
             variant="outline"
             size="icon"
@@ -322,7 +289,6 @@ function Playlist() {
           >
             <Edit2 className="h-5 w-5" />
           </Button>
-
           <Button
             onClick={handleDeletePlaylist}
             variant="ghost"
@@ -337,9 +303,9 @@ function Playlist() {
 
       <Separator className="my-4" />
 
-      {/* ADD SONG SECTION */}
+      {/* ADD SONG PANEL */}
       {showAddSection && (
-        <Card className="border-dashed bg-muted/30">
+        <Card className="border-dashed bg-muted/30 mb-6">
           <CardContent className="p-6">
             <h3 className="mb-4 font-semibold">Canciones sugeridas</h3>
             {songsToAdd.length > 0 ? (
@@ -379,13 +345,14 @@ function Playlist() {
           </CardContent>
         </Card>
       )}
-      {/* SONG LIST (TABLE) */}
+
+      {/* SONGS TABLE */}
       {playlist.songs.length > 0 ? (
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[50px]">#</TableHead>
+                <TableHead className="w-[50px] text-center">#</TableHead>
                 <TableHead className="w-[60px]"></TableHead>
                 <TableHead>Título</TableHead>
                 <TableHead>Artista</TableHead>
@@ -393,15 +360,15 @@ function Playlist() {
                 <TableHead className="hidden md:table-cell">Fecha</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
                 <TableHead className="hidden sm:table-cell text-right">
-                  <Clock3 className="h-4 w-4 inline-block ml-auto" />
+                  <Clock3 className="h-4 w-4 ml-auto" />
                 </TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {playlist.songs.map((item, index) => {
-                // Extract the song from the item
-                const song = item.song || item;
+                let song = item.song || item;
+
                 if (!song || !song._id) return null;
 
                 const isCurrentSong = currentSong?._id === song._id;
@@ -412,7 +379,7 @@ function Playlist() {
                       <span
                         className={cn(
                           "group-hover:hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
-                          isCurrentSong && "text-primary"
+                          isCurrentSong && "text-primary",
                         )}
                       >
                         {index + 1}
@@ -423,21 +390,18 @@ function Playlist() {
                       >
                         <PlayCircle
                           className={cn(
-                            "h-7 w-7 fill-primary text-primary hover:scale-110 transition-transform"
+                            "h-7 w-7 fill-primary text-primary hover:scale-110 transition-transform",
                           )}
                         />
                       </button>
                     </TableCell>
 
-                    {/* SONG IMG */}
+                    {/* Image */}
                     <TableCell>
                       <div className="h-10 w-10 overflow-hidden rounded-sm bg-muted relative">
                         {song.coverArtPath ? (
                           <img
-                            src={`http://localhost:3000/${song.coverArtPath.replace(
-                              /\\/g,
-                              "/"
-                            )}`}
+                            src={`http://localhost:3000/${song.coverArtPath.replace(/\\/g, "/")}`}
                             alt={song.title}
                             className="h-full w-full object-cover"
                           />
@@ -446,7 +410,6 @@ function Playlist() {
                             <Music className="h-5 w-5 text-muted-foreground" />
                           </div>
                         )}
-                        {/* Animation current song */}
                         {isCurrentSong && isPlaying && (
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                             <div className="h-2 w-2 bg-accent rounded-full animate-pulse"></div>
@@ -455,25 +418,27 @@ function Playlist() {
                       </div>
                     </TableCell>
 
-                    {/* TITLE */}
-                    <TableCell className="font-medium truncate max-w-[200px]">
-                      <span className={cn(isCurrentSong && "text-primary")}>
-                        {song.title}
-                      </span>
+                    <TableCell
+                      className={cn(
+                        "font-medium truncate max-w-[200px]",
+                        isCurrentSong && "text-primary",
+                      )}
+                    >
+                      {song.title}
                     </TableCell>
-                    {/* ARTIST */}
                     <TableCell className="text-muted-foreground">
                       {song.artist}
                     </TableCell>
-                    {/* ALBUM */}
                     <TableCell className="text-muted-foreground">
                       {song.album}
                     </TableCell>
-                    {/* ADDED AT */}
                     <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
-                      {new Date(item.addedAt).toLocaleDateString()}
+                      {item.addedAt
+                        ? new Date(item.addedAt).toLocaleDateString()
+                        : "-"}
                     </TableCell>
-                    {/* LIKE */}
+
+                    {/* Like Button */}
                     <TableCell>
                       <button
                         onClick={() => handleLike(song._id)}
@@ -483,24 +448,23 @@ function Playlist() {
                           className={cn(
                             "h-5 w-5",
                             likedSongs.includes(song._id) &&
-                              "fill-primary text-primary"
+                              "fill-primary text-primary",
                           )}
                         />
                       </button>
                     </TableCell>
-                    {/* DURATION */}
+
                     <TableCell className="hidden sm:table-cell text-right text-muted-foreground font-mono text-xs">
                       {formatTime(song.duration)}
                     </TableCell>
 
-                    {/* REMOVE SECTION */}
+                    {/* Remove Button */}
                     <TableCell className="text-right">
                       <Button
                         onClick={() => handleRemoveSong(song._id)}
                         variant="ghost"
                         size="icon"
                         className="opacity-0 transition-opacity group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-                        title="Quitar de la lista"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -524,16 +488,14 @@ function Playlist() {
         </div>
       )}
 
-      {/* MODAL SECTION (EDIT) */}
+      {/* EDIT MODAL */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Editar detalles</DialogTitle>
           </DialogHeader>
-
           <form onSubmit={handleUpdatePlaylist} className="grid gap-4 py-4">
             <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-4">
-              {/* Image Input */}
               <div className="flex flex-col items-center gap-2">
                 <div className="h-40 w-40 bg-muted rounded-md flex items-center justify-center overflow-hidden relative border border-dashed border-zinc-400">
                   {editFile ? (
@@ -543,10 +505,7 @@ function Playlist() {
                     />
                   ) : playlist.coverImagePath ? (
                     <img
-                      src={`http://localhost:3000/${playlist.coverImagePath.replace(
-                        /\\/g,
-                        "/"
-                      )}`}
+                      src={`http://localhost:3000/${playlist.coverImagePath.replace(/\\/g, "/")}`}
                       className="h-full w-full object-cover"
                     />
                   ) : (
@@ -558,11 +517,9 @@ function Playlist() {
                   type="file"
                   accept="image/*"
                   onChange={(e) => setEditFile(e.target.files[0])}
-                  className="w-full text-xs cursor-pointer file:mr-4 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                  className="w-full text-xs cursor-pointer"
                 />
               </div>
-
-              {/* Text Inputs */}
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre</Label>
@@ -584,7 +541,6 @@ function Playlist() {
                 </div>
               </div>
             </div>
-
             <div className="flex justify-end">
               <Button type="submit" disabled={isSaving}>
                 {isSaving ? "Guardando..." : "Guardar"}
