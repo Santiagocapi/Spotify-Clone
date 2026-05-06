@@ -9,14 +9,8 @@ import OurMusicLogo from "@/components/Logo";
 // Icons Lucid React
 import {
   Home,
-  Search,
-  Library,
-  PlusCircle,
-  Upload,
   ChevronLeft,
   ChevronRight,
-  LogOut,
-  ListMusic,
   Disc,
   Heart,
 } from "lucide-react";
@@ -24,7 +18,6 @@ import {
 // UI Components (Shadcn UI)
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
@@ -36,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function Sidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [playlists, setPlaylists] = useState([]);
   const { user, loading, dispatch } = useAuthContext();
   const location = useLocation();
@@ -61,11 +54,6 @@ function Sidebar() {
 
     fetchPlaylists();
   }, [user, loading]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    dispatch({ type: "LOGOUT" });
-  };
 
   // Navigation list
   const navItems = [
@@ -199,60 +187,6 @@ function Sidebar() {
              {/* New "Recents" section will go here */}
           </div>
         </ScrollArea>
-
-        {/* FOOTER ( User + Logout Button) */}
-        <div className="p-3 mt-auto border-t border-border bg-background/50">
-          {/* User */}
-          <div
-            className={cn(
-              "flex items-center gap-3 mb-2",
-              isCollapsed ? "justify-center" : "px-2",
-            )}
-          >
-            <Avatar className="h-9 w-9 border border-border cursor-pointer hover:ring-2 ring-primary transition-all">
-              <AvatarImage
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
-              />
-              <AvatarFallback>
-                {user?.email?.substring(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-
-            {!isCollapsed && (
-              <div className="flex flex-col overflow-hidden">
-                <span className="text-sm font-medium truncate">
-                  {user?.email}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* LOGOUT BUTTON*/}
-          {isCollapsed ? (
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={handleLogout}
-                  variant="ghost"
-                  size="icon"
-                  className="w-full h-10 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <LogOut size={20} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Cerrar Sesión</TooltipContent>
-            </Tooltip>
-          ) : (
-            <Button
-              onClick={handleLogout}
-              variant="ghost"
-              className="w-full justify-start gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            >
-              <LogOut size={18} />
-              Cerrar Sesión
-            </Button>
-          )}
-        </div>
       </aside>
     </TooltipProvider>
   );
