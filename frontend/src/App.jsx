@@ -8,6 +8,7 @@ import "./index.css";
 // Components
 import Player from "@/components/Player";
 import Sidebar from "@/components/Sidebar";
+import { Header } from "@/components/Header";
 import { Toaster } from "@/components/ui/sonner";
 
 function App() {
@@ -42,6 +43,7 @@ function App() {
       <Sidebar />
 
       <div className="flex flex-col overflow-hidden relative bg-background">
+        <Header />
         {/* MAIN CONTENT */}
         <main className="flex-1 overflow-y-auto p-6 md:p-10 pb-32 scroll-smooth">
           <div className="mx-auto max-w-7xl animate-in fade-in duration-500">

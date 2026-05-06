@@ -70,8 +70,6 @@ function Sidebar() {
   // Navigation list
   const navItems = [
     { icon: Home, label: "Inicio", path: "/" },
-    { icon: Search, label: "Explorar", path: "/explore" },
-    { icon: ListMusic, label: "Playlists", path: "/playlists" },
   ];
 
   const libraryItems = [
@@ -196,48 +194,9 @@ function Sidebar() {
 
           <Separator className="my-4 opacity-50" />
 
-          {/* PLAYLISTS */}
+          {/* PLAYLISTS WILL BE MOVED TO A NEW SECTION LATER */}
           <div className="mt-4">
-            {!isCollapsed && (
-              <h3 className="mb-2 px-4 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
-                Tus Playlists
-              </h3>
-            )}
-
-            <div className="space-y-1">
-              {/* liked songs button */}
-              <NavButton
-                icon={Heart}
-                label="Tus Me Gusta"
-                path="/collection/tracks"
-                className="text-primary hover:text-primary hover:bg-primary/10"
-              />
-              {/* playlist list */}
-              {loading ? (
-                <div className="space-y-2 px-2 mt-2">
-                  {[...Array(4)].map((_, i) => (
-                    <Skeleton key={i} className="h-8 w-full" />
-                  ))}
-                </div>
-              ) : (
-                playlists.map((playlist) => (
-                  <NavButton
-                    key={playlist._id}
-                    icon={Disc}
-                    image={
-                      playlist.coverImagePath
-                        ? `http://localhost:3000/${playlist.coverImagePath.replace(
-                            /\\/g,
-                            "/",
-                          )}`
-                        : null
-                    }
-                    label={playlist.name}
-                    path={`/playlist/${playlist._id}`}
-                  />
-                ))
-              )}
-            </div>
+             {/* New "Recents" section will go here */}
           </div>
         </ScrollArea>
 
