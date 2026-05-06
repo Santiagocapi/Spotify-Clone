@@ -5,7 +5,7 @@ import React, { useState } from "react";
 // "useNavigate" is the hook that allows us to redirect the user
 import { useNavigate, Link } from "react-router-dom";
 // import axios (our API "messenger")
-import axios from "axios";
+import api from "@/lib/api";
 
 // UI Components (Shadcn UI)
 import { Button } from "@/components/ui/button";
@@ -73,7 +73,7 @@ function Register() {
       };
 
       // calling the api
-      const response = await axios.post("/api/users/register", userData);
+      const response = await api.post("/api/users/register", userData);
       console.log("Usuario registrado:", response.data);
 
       // we redirect the user to the login page using navigate

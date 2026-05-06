@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import api from "@/lib/api";
 // Import our custom hook
 import { useAuthContext } from "../context/AuthContext.jsx";
 
@@ -41,7 +41,7 @@ function Login() {
       const userData = { email, password };
 
       // Call the LOGIN endpoint
-      const response = await axios.post("/api/users/login", userData);
+      const response = await api.post("/api/users/login", userData);
 
       // response.data will be the object { _id, username, email, token }
       const user = response.data;

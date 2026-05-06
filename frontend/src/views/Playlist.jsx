@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "@/lib/api";
 import { useAuthContext } from "../context/AuthContext";
 import { usePlayer } from "../context/PlayerContext";
 import { cn, formatTime } from "@/lib/utils";
@@ -62,18 +62,18 @@ function Playlist() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const playlistRes = await axios.get(`/api/playlists/${id}`, {
+        const playlistRes = await api.get(`/api/playlists/${id}`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         setPlaylist(playlistRes.data);
         setEditName(playlistRes.data.name);
         setEditDesc(playlistRes.data.description || "");
 
-        const songsRes = await axios.get("/api/songs");
+        const songsRes = await api.get("/api/songs");
         setAllSongs(songsRes.data);
 
         try {
-          const userLikesRes = await axios.get("/api/users/liked", {
+          const userLikesRes = await api.get("/api/users/liked", {
             headers: { Authorization: `Bearer ${user.token}` },
           });
           if (Array.isArray(userLikesRes.data)) {
@@ -106,7 +106,7 @@ function Playlist() {
     if (editFile) formData.append("coverImage", editFile);
 
     try {
-      const res = await axios.put(`/api/playlists/${id}`, formData, {
+      const res = await api.put(`/api/playlists/${id}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${user.token}`,
@@ -125,7 +125,7 @@ function Playlist() {
   // Add song to playlist
   const handleAddSong = async (songId) => {
     try {
-      await axios.put(
+      await api.put(
         `/api/playlists/${id}/add`,
         { songId },
         {
@@ -133,7 +133,7 @@ function Playlist() {
         },
       );
       toast.success("Canción añadida correctamente");
-      const res = await axios.get(`/api/playlists/${id}`, {
+      const res = await api.get(`/api/playlists/${id}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
       setPlaylist(res.data);
@@ -146,14 +146,14 @@ function Playlist() {
   const handleRemoveSong = async (songId) => {
     toast.promise(
       async () => {
-        await axios.put(
+        await api.put(
           `/api/playlists/${id}/remove`,
           { songId },
           {
             headers: { Authorization: `Bearer ${user.token}` },
           },
         );
-        const res = await axios.get(`/api/playlists/${id}`, {
+        const res = await api.get(`/api/playlists/${id}`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         setPlaylist(res.data);
@@ -171,7 +171,7 @@ function Playlist() {
     if (!window.confirm("¿Estás seguro de eliminar esta playlist entera?"))
       return;
     try {
-      await axios.delete(`/api/playlists/${id}`, {
+      await api.delete(`/api/playlists/${id}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
       navigate("/");
@@ -184,7 +184,7 @@ function Playlist() {
   // Like songs
   const handleLike = async (songId) => {
     try {
-      await axios.put(
+      await api.put(
         `/api/users/like/${songId}`,
         {},
         {

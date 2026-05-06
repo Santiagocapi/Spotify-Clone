@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import axios from "axios";
+import api from "@/lib/api";
+import { toast } from "sonner";
 import { useAuthContext } from "../context/AuthContext";
 // Logo
 import OurMusicLogo from "@/components/Logo";
@@ -47,12 +48,13 @@ function Sidebar() {
 
     const fetchPlaylists = async () => {
       try {
-        const res = await axios.get("/api/playlists/my", {
+        const res = await api.get("/api/playlists/my", {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         setPlaylists(res.data);
       } catch (error) {
         console.error("Error cargando playlists en sidebar", error);
+        toast.error("Error al cargar tus playlists");
       }
     };
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import api from "@/lib/api";
 import { cn, formatTime } from "@/lib/utils";
 
 // Import Contexts
@@ -54,13 +54,13 @@ function Home() {
       try {
         setLoading(true);
         // 1. Fetch Songs
-        const songRes = await axios.get("/api/songs");
+        const songRes = await api.get("/api/songs");
         // Ensure it's an array
         setSongs(Array.isArray(songRes.data) ? songRes.data : []);
 
         // 2. Fetch Playlists (Only if user is logged in)
         if (user) {
-          const playlistsRes = await axios.get("/api/playlists/my", {
+          const playlistsRes = await api.get("/api/playlists/my", {
             headers: { Authorization: `Bearer ${user.token}` },
           });
           setPlaylists(
@@ -70,6 +70,7 @@ function Home() {
       } catch (err) {
         console.error("Error loading data:", err);
         setError("No se pudieron cargar las canciones.");
+        toast.error(err.response?.data?.message || "Error al cargar la librería.");
       } finally {
         setLoading(false);
       }
@@ -89,7 +90,7 @@ function Home() {
     if (!songToAdd) return;
 
     try {
-      await axios.put(
+      await api.put(
         `/api/playlists/${playlistId}/add`,
         { songId: songToAdd._id },
         { headers: { Authorization: `Bearer ${user.token}` } },

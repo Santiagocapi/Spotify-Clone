@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import api from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 
 // Context
@@ -55,7 +55,7 @@ function UploadSong() {
     });
 
     try {
-      const res = await axios.post("/api/songs/bulk", formData, {
+      const res = await api.post("/api/songs/bulk", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${user.token}`,
