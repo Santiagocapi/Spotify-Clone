@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import api from "@/lib/api";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 // Context
 import { useAuthContext } from "../context/AuthContext";
@@ -61,13 +62,11 @@ function UploadSong() {
           Authorization: `Bearer ${user.token}`,
         },
       });
-      setUploadStatus("success");
-      setMessage(`¡Listo! ${res.data.details.length} canciones añadidas.`);
+            toast.success(`¡Listo! ${res.data.details.length} canciones añadidas.`);
       setFiles([]); // Clear the list after success
     } catch (error) {
       console.error(error);
-      setUploadStatus("error");
-      setMessage("Hubo un error al subir los archivos.");
+      toast.error("Hubo un error al subir los archivos.");
     } finally {
       setIsUploading(false);
     }
