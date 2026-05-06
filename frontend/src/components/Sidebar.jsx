@@ -82,7 +82,11 @@ function Sidebar() {
     if (isCollapsed) {
       return (
         <Tooltip delayDuration={0}>
-          <TooltipTrigger asChild>{content}</TooltipTrigger>
+          <TooltipTrigger asChild>
+            <Link to={path} className="w-full block">
+              {content}
+            </Link>
+          </TooltipTrigger>
           <TooltipContent side="right" className="font-medium">
             {label}
           </TooltipContent>

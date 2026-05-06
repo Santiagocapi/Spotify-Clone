@@ -38,7 +38,7 @@ const createPlaylist = async (req, res) => {
 const getUserPlaylists = async (req, res) => {
   try {
     // Find playlists owned by the ID
-    const playlists = await Playlist.find({ owner: req.user._id });
+    const playlists = await Playlist.find({ owner: req.user._id }).populate("songs.song");
     res.status(200).json(playlists);
   } catch (error) {
     res.status(500).json({ message: `Error del servidor: ${error.message}` });
@@ -142,6 +142,32 @@ const removeSongFromPlaylist = async (req, res) => {
   }
 };
 
+// @desc    Reorder songs in a playlist
+// @route   PUT /api/playlists/:id/reorder
+// @access  Private
+const reorderSongs = async (req, res) => {
+  try {
+    const { songs } = req.body;
+    const { id: playlistId } = req.params;
+
+    const playlist = await Playlist.findById(playlistId);
+    if (!playlist) {
+      return res.status(404).json({ message: "Playlist no encontrada" });
+    }
+
+    if (playlist.owner.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "No autorizado" });
+    }
+
+    playlist.songs = songs;
+    await playlist.save();
+
+    res.status(200).json(playlist);
+  } catch (error) {
+    res.status(500).json({ message: `Error del servidor: ${error.message}` });
+  }
+};
+
 // @desc    Delete a playlist
 // @route   DELETE /api/playlists/:id
 // @access  Private
@@ -205,6 +231,7 @@ module.exports = {
   addSongToPlaylist,
   getPlaylistById,
   removeSongFromPlaylist,
+  reorderSongs,
   deletePlaylist,
   editPlaylist,
 };
