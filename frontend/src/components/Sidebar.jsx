@@ -60,11 +60,6 @@ function Sidebar() {
     { icon: Home, label: "Inicio", path: "/" },
   ];
 
-  const libraryItems = [
-    { icon: PlusCircle, label: "Crear Playlist", path: "/create-playlist" },
-    { icon: Upload, label: "Subir Canción", path: "/upload" },
-  ];
-
   // Auxiliary component to render buttons with Tooltip
   const NavButton = ({
     icon: Icon,
