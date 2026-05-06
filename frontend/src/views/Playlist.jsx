@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 import { useAuthContext } from "../context/AuthContext";
+import { useRecentPlaylists } from "../hooks/useRecentPlaylists";
 import { usePlayer } from "../context/PlayerContext";
 import { cn, formatTime } from "@/lib/utils";
 
@@ -43,6 +44,7 @@ import {
 function Playlist() {
   const { id } = useParams();
   const { user } = useAuthContext();
+  const { addRecent } = useRecentPlaylists();
   const navigate = useNavigate();
   const { playSong, currentSong, isPlaying } = usePlayer();
 
@@ -67,6 +69,7 @@ function Playlist() {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         setPlaylist(playlistRes.data);
+        addRecent(playlistRes.data);
         setEditName(playlistRes.data.name);
         setEditDesc(playlistRes.data.description || "");
 

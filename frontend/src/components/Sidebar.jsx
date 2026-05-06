@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { useAuthContext } from "../context/AuthContext";
+import { useRecentPlaylists } from "../hooks/useRecentPlaylists";
 // Logo
 import OurMusicLogo from "@/components/Logo";
 
@@ -30,30 +31,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(true);
-  const [playlists, setPlaylists] = useState([]);
   const { user, loading, dispatch } = useAuthContext();
+  const { recent } = useRecentPlaylists();
   const location = useLocation();
-
-  useEffect(() => {
-    if (!user || loading) {
-      setPlaylists([]);
-      return;
-    }
-
-    const fetchPlaylists = async () => {
-      try {
-        const res = await api.get("/api/playlists/my", {
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
-        setPlaylists(res.data);
-      } catch (error) {
-        console.error("Error cargando playlists en sidebar", error);
-        toast.error("Error al cargar tus playlists");
-      }
-    };
-
-    fetchPlaylists();
-  }, [user, loading]);
 
   // Navigation list
   const navItems = [
@@ -177,9 +157,27 @@ function Sidebar() {
 
           <Separator className="my-4 opacity-50" />
 
-          {/* PLAYLISTS WILL BE MOVED TO A NEW SECTION LATER */}
           <div className="mt-4">
-             {/* New "Recents" section will go here */}
+            {!isCollapsed && (
+              <h3 className="mb-2 px-4 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+                Recientes
+              </h3>
+            )}
+            <div className="space-y-1">
+              {recent.map((playlist) => (
+                <NavButton
+                  key={playlist._id}
+                  icon={Disc}
+                  image={
+                    playlist.coverImagePath
+                      ? `http://localhost:3000/${playlist.coverImagePath.replace(/\\/g, "/")}`
+                      : null
+                  }
+                  label={playlist.name}
+                  path={`/playlist/${playlist._id}`}
+                />
+              ))}
+            </div>
           </div>
         </ScrollArea>
       </aside>
