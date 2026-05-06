@@ -36,28 +36,28 @@ import { cn } from "@/lib/utils";
 function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [playlists, setPlaylists] = useState([]);
-  const { user, dispatch } = useAuthContext();
+  const { user, loading, dispatch } = useAuthContext();
   const location = useLocation();
 
   useEffect(() => {
+    if (!user || loading) {
+      setPlaylists([]);
+      return;
+    }
+
     const fetchPlaylists = async () => {
       try {
-        if (user) {
-          const res = await axios.get("/api/playlists/my", {
-            headers: { Authorization: `Bearer ${user.token}` },
-          });
-          setPlaylists(res.data);
-        }
+        const res = await axios.get("/api/playlists/my", {
+          headers: { Authorization: `Bearer ${user.token}` },
+        });
+        setPlaylists(res.data);
       } catch (error) {
         console.error("Error cargando playlists en sidebar", error);
       }
     };
 
     fetchPlaylists();
-
-    // In a real app, i would use a PlaylistContext to update playlists automatically,
-    // now it refreshes when navigating
-  }, [user]);
+  }, [user, loading]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");

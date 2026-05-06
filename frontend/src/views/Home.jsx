@@ -39,10 +39,17 @@ function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [songToAdd, setSongToAdd] = useState(null);
 
-  const { user } = useAuthContext();
+  const { user, loading: authLoading } = useAuthContext();
   const { playSong } = usePlayer();
 
   useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -69,7 +76,7 @@ function Home() {
     };
 
     fetchData();
-  }, [user]);
+  }, [user, authLoading]);
 
   // Open the "Add to Playlist" modal
   const openAddModal = (song) => {
