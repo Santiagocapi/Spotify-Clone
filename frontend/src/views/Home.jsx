@@ -23,6 +23,7 @@ import {
   TooltipTrigger,
   TooltipProvider,
 } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 // Icons
@@ -107,8 +108,31 @@ function Home() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center p-10 text-muted-foreground">
-        Loading library...
+      <div className="space-y-8 p-6">
+        {/* Playlists Skeleton */}
+        <section className="space-y-4">
+          <Skeleton className="h-8 w-40" />
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="aspect-square w-full rounded-md" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            ))}
+          </div>
+        </section>
+        {/* Songs Skeleton */}
+        <section className="space-y-4">
+          <Skeleton className="h-8 w-40" />
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="aspect-square w-full rounded-md" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     );
   }

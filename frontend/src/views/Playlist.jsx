@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -201,9 +202,23 @@ function Playlist() {
     }
   };
 
-  if (loading)
+if (loading)
     return (
-      <div className="p-10 text-center text-muted-foreground">Cargando...</div>
+      <div className="space-y-6 p-6">
+        <div className="flex gap-6 items-end">
+          <Skeleton className="h-52 w-52 rounded-lg" />
+          <div className="space-y-4 flex-1">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-10 w-2/3" />
+            <Skeleton className="h-4 w-1/3" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </div>
+      </div>
     );
   if (error)
     return <div className="p-10 text-center text-destructive">{error}</div>;

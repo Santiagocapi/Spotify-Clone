@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "@/lib/api";
+import { toast } from "sonner";
 // Import our custom hook
 import { useAuthContext } from "../context/AuthContext.jsx";
 
@@ -54,9 +55,10 @@ function Login() {
 
       // Back to 'Home'
       navigate("/");
-    } catch (apiError) {
-      setError(apiError.response.data.message || "Error al iniciar sesión");
-    }
+} catch (apiError) {
+        setError(apiError.response.data.message || "Error al iniciar sesión");
+        toast.error(apiError.response.data.message || "Error al iniciar sesión");
+      }
   };
 
   return (

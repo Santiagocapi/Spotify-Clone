@@ -33,6 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -212,22 +213,30 @@ function Sidebar() {
                 className="text-primary hover:text-primary hover:bg-primary/10"
               />
               {/* playlist list */}
-              {playlists.map((playlist) => (
-                <NavButton
-                  key={playlist._id}
-                  icon={Disc}
-                  image={
-                    playlist.coverImagePath
-                      ? `http://localhost:3000/${playlist.coverImagePath.replace(
-                          /\\/g,
-                          "/",
-                        )}`
-                      : null
-                  }
-                  label={playlist.name}
-                  path={`/playlist/${playlist._id}`}
-                />
-              ))}
+              {loading ? (
+                <div className="space-y-2 px-2 mt-2">
+                  {[...Array(4)].map((_, i) => (
+                    <Skeleton key={i} className="h-8 w-full" />
+                  ))}
+                </div>
+              ) : (
+                playlists.map((playlist) => (
+                  <NavButton
+                    key={playlist._id}
+                    icon={Disc}
+                    image={
+                      playlist.coverImagePath
+                        ? `http://localhost:3000/${playlist.coverImagePath.replace(
+                            /\\/g,
+                            "/",
+                          )}`
+                        : null
+                    }
+                    label={playlist.name}
+                    path={`/playlist/${playlist._id}`}
+                  />
+                ))
+              )}
             </div>
           </div>
         </ScrollArea>
