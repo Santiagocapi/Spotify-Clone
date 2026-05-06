@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "@/lib/api";
-import { toast } from "sonner";
-// Import our custom hook
+import { cn } from "@/lib/utils";
 import { useAuthContext } from "../context/AuthContext.jsx";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 // UI Components (Shadcn UI)
 import { Button } from "@/components/ui/button";
@@ -18,47 +20,37 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+const loginSchema = z.object({
+  email: z.string().email("Email inválido"),
+  password: z.string().min(1, "La contraseña es obligatoria"),
+});
+
 function Login() {
-  // Local state (memory) ONLY for form fields
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-
   const { dispatch } = useAuthContext();
-
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const onSubmit = async (data) => {
     setError(null);
-
-    if (!email || !password) {
-      setError("Todos los campos son obligatorios");
-      return;
-    }
-
     try {
-      const userData = { email, password };
-
-      // Call the LOGIN endpoint
-      const response = await api.post("/api/users/login", userData);
-
-      // response.data will be the object { _id, username, email, token }
+      const response = await api.post("/api/users/login", data);
       const user = response.data;
-
-      // This is so you stay logged in if you reload the page
       localStorage.setItem("user", JSON.stringify(user));
-
-      // We send the LOGIN "action" to our reducer.
       dispatch({ type: "LOGIN", payload: user });
-
-      // Back to 'Home'
       navigate("/");
-} catch (apiError) {
-        setError(apiError.response.data.message || "Error al iniciar sesión");
-        toast.error(apiError.response.data.message || "Error al iniciar sesión");
-      }
+    } catch (apiError) {
+      const msg = apiError.response?.data?.message || "Error al iniciar sesión";
+      setError(msg);
+      toast.error(msg);
+    }
   };
 
   return (
@@ -74,7 +66,7 @@ function Login() {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
               <div className="bg-destructive/10 text-destructive text-sm text-center font-medium p-3 rounded-md border border-destructive/20">
                 {error}
@@ -87,38 +79,31 @@ function Login() {
                 id="email"
                 type="email"
                 placeholder="tu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-background border-input focus:ring-primary"
+                {...register("email")}
+                className={cn("bg-background border-input focus:ring-primary", errors.email && "border-destructive")}
               />
+              {errors.email && <p className="text-destructive text-sm">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Contraseña</Label>
-                {/* Enlace decorativo */}
-                <Link
-                  to="#"
-                  className="text-sm font-medium text-primary hover:underline"
-                >
-                  ¿Olvidaste tu contraseña?
-                </Link>
               </div>
               <Input
                 id="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-background border-input focus:ring-primary"
+                {...register("password")}
+                className={cn("bg-background border-input focus:ring-primary", errors.password && "border-destructive")}
               />
+              {errors.password && <p className="text-destructive text-sm">{errors.password.message}</p>}
             </div>
 
             <Button
               type="submit"
               className="w-full font-bold rounded-full mt-2"
-              disabled={loading}
+              disabled={isSubmitting}
             >
-              {loading ? "Entrando..." : "Iniciar Sesión"}
+              {isSubmitting ? "Entrando..." : "Iniciar Sesión"}
             </Button>
           </form>
         </CardContent>
