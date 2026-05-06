@@ -1,7 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import api from "@/lib/api";
+import { toast } from "sonner";
 import { useAuthContext } from "../context/AuthContext";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { cn } from "@/lib/utils";
 
 // UI Components (Shadcn UI)
 import { Button } from "@/components/ui/button";
@@ -11,49 +16,42 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 
-function CreatePlaylist() {
-  const [name, setName] = useState("");
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+const playlistSchema = z.object({
+  name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
+});
 
+function CreatePlaylist() {
   const { user } = useAuthContext();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(playlistSchema),
+  });
 
-    if (!name) {
-      setError("El nombre es obligatorio");
-      return;
-    }
-
-    setLoading(true);
-
+  const onSubmit = async (data) => {
     try {
-      // Send POST request to the endpoint to create a playlist.
-      await axios.post(
+      await api.post(
         "/api/playlists",
-        { name },
+        data,
         {
           headers: {
             Authorization: `Bearer ${user.token}`,
           },
         }
       );
-
-      // If it goes well, return to the Home page
+      toast.success("Playlist creada exitosamente");
       navigate("/");
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || "Error al crear la playlist");
-    } finally {
-      setLoading(false);
+      toast.error(err.response?.data?.message || "Error al crear la playlist");
     }
   };
 
@@ -70,24 +68,18 @@ function CreatePlaylist() {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="bg-destructive/10 text-destructive text-sm text-center font-medium p-3 rounded-md border border-destructive/20">
-                {error}
-              </div>
-            )}
-
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nombre</Label>
               <Input
                 id="name"
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                {...register("name")}
                 placeholder="Ej. Música para programar"
                 autoFocus
-                className="bg-background focus:ring-primary"
+                className={cn("bg-background focus:ring-primary", errors.name && "border-destructive")}
               />
+              {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
             </div>
 
             <div className="flex gap-3 pt-2">
@@ -99,9 +91,9 @@ function CreatePlaylist() {
               <Button
                 type="submit"
                 className="w-1/2 font-bold"
-                disabled={loading}
+                disabled={isSubmitting}
               >
-                {loading ? "Creando..." : "Crear Playlist"}
+                {isSubmitting ? "Creando..." : "Crear Playlist"}
               </Button>
             </div>
           </form>

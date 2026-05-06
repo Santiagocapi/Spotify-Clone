@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import axios from "axios";
+import api from "@/lib/api";
+import { toast } from "sonner";
 import { useAuthContext } from "../context/AuthContext";
 // Logo
 import OurMusicLogo from "@/components/Logo";
@@ -32,6 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -47,12 +49,13 @@ function Sidebar() {
 
     const fetchPlaylists = async () => {
       try {
-        const res = await axios.get("/api/playlists/my", {
+        const res = await api.get("/api/playlists/my", {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         setPlaylists(res.data);
       } catch (error) {
         console.error("Error cargando playlists en sidebar", error);
+        toast.error("Error al cargar tus playlists");
       }
     };
 
@@ -210,22 +213,30 @@ function Sidebar() {
                 className="text-primary hover:text-primary hover:bg-primary/10"
               />
               {/* playlist list */}
-              {playlists.map((playlist) => (
-                <NavButton
-                  key={playlist._id}
-                  icon={Disc}
-                  image={
-                    playlist.coverImagePath
-                      ? `http://localhost:3000/${playlist.coverImagePath.replace(
-                          /\\/g,
-                          "/",
-                        )}`
-                      : null
-                  }
-                  label={playlist.name}
-                  path={`/playlist/${playlist._id}`}
-                />
-              ))}
+              {loading ? (
+                <div className="space-y-2 px-2 mt-2">
+                  {[...Array(4)].map((_, i) => (
+                    <Skeleton key={i} className="h-8 w-full" />
+                  ))}
+                </div>
+              ) : (
+                playlists.map((playlist) => (
+                  <NavButton
+                    key={playlist._id}
+                    icon={Disc}
+                    image={
+                      playlist.coverImagePath
+                        ? `http://localhost:3000/${playlist.coverImagePath.replace(
+                            /\\/g,
+                            "/",
+                          )}`
+                        : null
+                    }
+                    label={playlist.name}
+                    path={`/playlist/${playlist._id}`}
+                  />
+                ))
+              )}
             </div>
           </div>
         </ScrollArea>

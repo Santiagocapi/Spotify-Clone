@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import api from "@/lib/api";
 import { cn, formatTime } from "@/lib/utils";
 
 // Import Contexts
@@ -23,6 +23,7 @@ import {
   TooltipTrigger,
   TooltipProvider,
 } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 // Icons
@@ -54,13 +55,13 @@ function Home() {
       try {
         setLoading(true);
         // 1. Fetch Songs
-        const songRes = await axios.get("/api/songs");
+        const songRes = await api.get("/api/songs");
         // Ensure it's an array
         setSongs(Array.isArray(songRes.data) ? songRes.data : []);
 
         // 2. Fetch Playlists (Only if user is logged in)
         if (user) {
-          const playlistsRes = await axios.get("/api/playlists/my", {
+          const playlistsRes = await api.get("/api/playlists/my", {
             headers: { Authorization: `Bearer ${user.token}` },
           });
           setPlaylists(
@@ -70,6 +71,7 @@ function Home() {
       } catch (err) {
         console.error("Error loading data:", err);
         setError("No se pudieron cargar las canciones.");
+        toast.error(err.response?.data?.message || "Error al cargar la librería.");
       } finally {
         setLoading(false);
       }
@@ -89,7 +91,7 @@ function Home() {
     if (!songToAdd) return;
 
     try {
-      await axios.put(
+      await api.put(
         `/api/playlists/${playlistId}/add`,
         { songId: songToAdd._id },
         { headers: { Authorization: `Bearer ${user.token}` } },
@@ -106,8 +108,31 @@ function Home() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center p-10 text-muted-foreground">
-        Loading library...
+      <div className="space-y-8 p-6">
+        {/* Playlists Skeleton */}
+        <section className="space-y-4">
+          <Skeleton className="h-8 w-40" />
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="aspect-square w-full rounded-md" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            ))}
+          </div>
+        </section>
+        {/* Songs Skeleton */}
+        <section className="space-y-4">
+          <Skeleton className="h-8 w-40" />
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="aspect-square w-full rounded-md" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     );
   }

@@ -1,11 +1,11 @@
-// this is a component from react
-// is a function that returns JSX, Javascript + XLM (likes HTML)
-// import the "hooks" we need
 import React, { useState } from "react";
-// "useNavigate" is the hook that allows us to redirect the user
 import { useNavigate, Link } from "react-router-dom";
-// import axios (our API "messenger")
-import axios from "axios";
+import api from "@/lib/api";
+import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { cn } from "@/lib/utils";
 
 // UI Components (Shadcn UI)
 import { Button } from "@/components/ui/button";
@@ -20,66 +20,34 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-// UI Icons (For now only svg, soon i will use lucide-react for real icons)
-const GoogleIcon = () => (
-  <svg
-    className="mr-2 h-4 w-4"
-    aria-hidden="true"
-    focusable="false"
-    data-prefix="fab"
-    data-icon="google"
-    role="img"
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 488 512"
-  >
-    <path
-      fill="currentColor"
-      d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"
-    ></path>
-  </svg>
-);
+const registerSchema = z.object({
+  username: z.string().min(2, "El usuario debe tener al menos 2 caracteres"),
+  email: z.string().email("Email inválido"),
+  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+});
 
 function Register() {
-  // created a "state variable" for each input.
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  // initialize the "redirector"
   const navigate = useNavigate();
 
-  // this function will be called when the form is submitted
-  const handleSubmit = async (e) => {
-    // prevent the browser from reloading the page
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(registerSchema),
+  });
+
+  const onSubmit = async (data) => {
     setError(null);
-
-    // simple validation on the frontend
-    if (!username || !email || !password) {
-      setError("Todos los campos son obligatorios");
-      return;
-    }
-
-    // using Axios
-    // making a POST request to our backend
-    // '/api/users/register' becomes 'http://localhost:3000/api/users/register'
     try {
-      const userData = {
-        username: username,
-        email: email,
-        password: password,
-      };
-
-      // calling the api
-      const response = await axios.post("/api/users/register", userData);
-      console.log("Usuario registrado:", response.data);
-
-      // we redirect the user to the login page using navigate
+      await api.post("/api/users/register", data);
+      toast.success("Cuenta creada exitosamente");
       navigate("/login");
     } catch (apiError) {
-      setError(apiError.response.data.message || "Error al registrarse");
+      const msg = apiError.response?.data?.message || "Error al registrarse";
+      setError(msg);
+      toast.error(msg);
     }
   };
 
@@ -96,29 +64,7 @@ function Register() {
         </CardHeader>
 
         <CardContent className="grid gap-4">
-          {/* Botón decorativo de Google */}
-          <div className="grid grid-cols-1">
-            <Button
-              variant="outline"
-              className="w-full bg-background text-foreground border-input hover:bg-accent hover:text-accent-foreground"
-            >
-              <GoogleIcon />
-              Registrarse con Google
-            </Button>
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
-                O continúa con email
-              </span>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
               <div className="bg-destructive/15 text-destructive text-sm text-center font-medium p-3 rounded-md border border-destructive/20">
                 {error}
@@ -130,10 +76,10 @@ function Register() {
               <Input
                 id="username"
                 placeholder="Tu nombre de usuario"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="bg-background border-input"
+                {...register("username")}
+                className={cn("bg-background border-input", errors.username && "border-destructive")}
               />
+              {errors.username && <p className="text-destructive text-sm">{errors.username.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -142,10 +88,10 @@ function Register() {
                 id="email"
                 type="email"
                 placeholder="nombre@ejemplo.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-background border-input"
+                {...register("email")}
+                className={cn("bg-background border-input", errors.email && "border-destructive")}
               />
+              {errors.email && <p className="text-destructive text-sm">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -153,18 +99,18 @@ function Register() {
               <Input
                 id="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-background border-input"
+                {...register("password")}
+                className={cn("bg-background border-input", errors.password && "border-destructive")}
               />
+              {errors.password && <p className="text-destructive text-sm">{errors.password.message}</p>}
             </div>
 
             <Button
               type="submit"
               className="w-full font-bold"
-              disabled={loading}
+              disabled={isSubmitting}
             >
-              {loading ? "Creando cuenta..." : "Registrarse"}
+              {isSubmitting ? "Creando cuenta..." : "Registrarse"}
             </Button>
           </form>
         </CardContent>

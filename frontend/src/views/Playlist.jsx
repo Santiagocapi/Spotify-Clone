@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "@/lib/api";
 import { useAuthContext } from "../context/AuthContext";
 import { usePlayer } from "../context/PlayerContext";
 import { cn, formatTime } from "@/lib/utils";
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -62,18 +63,18 @@ function Playlist() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const playlistRes = await axios.get(`/api/playlists/${id}`, {
+        const playlistRes = await api.get(`/api/playlists/${id}`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         setPlaylist(playlistRes.data);
         setEditName(playlistRes.data.name);
         setEditDesc(playlistRes.data.description || "");
 
-        const songsRes = await axios.get("/api/songs");
+        const songsRes = await api.get("/api/songs");
         setAllSongs(songsRes.data);
 
         try {
-          const userLikesRes = await axios.get("/api/users/liked", {
+          const userLikesRes = await api.get("/api/users/liked", {
             headers: { Authorization: `Bearer ${user.token}` },
           });
           if (Array.isArray(userLikesRes.data)) {
@@ -106,7 +107,7 @@ function Playlist() {
     if (editFile) formData.append("coverImage", editFile);
 
     try {
-      const res = await axios.put(`/api/playlists/${id}`, formData, {
+      const res = await api.put(`/api/playlists/${id}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${user.token}`,
@@ -125,7 +126,7 @@ function Playlist() {
   // Add song to playlist
   const handleAddSong = async (songId) => {
     try {
-      await axios.put(
+      await api.put(
         `/api/playlists/${id}/add`,
         { songId },
         {
@@ -133,7 +134,7 @@ function Playlist() {
         },
       );
       toast.success("Canción añadida correctamente");
-      const res = await axios.get(`/api/playlists/${id}`, {
+      const res = await api.get(`/api/playlists/${id}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
       setPlaylist(res.data);
@@ -146,14 +147,14 @@ function Playlist() {
   const handleRemoveSong = async (songId) => {
     toast.promise(
       async () => {
-        await axios.put(
+        await api.put(
           `/api/playlists/${id}/remove`,
           { songId },
           {
             headers: { Authorization: `Bearer ${user.token}` },
           },
         );
-        const res = await axios.get(`/api/playlists/${id}`, {
+        const res = await api.get(`/api/playlists/${id}`, {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         setPlaylist(res.data);
@@ -171,7 +172,7 @@ function Playlist() {
     if (!window.confirm("¿Estás seguro de eliminar esta playlist entera?"))
       return;
     try {
-      await axios.delete(`/api/playlists/${id}`, {
+      await api.delete(`/api/playlists/${id}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
       navigate("/");
@@ -184,7 +185,7 @@ function Playlist() {
   // Like songs
   const handleLike = async (songId) => {
     try {
-      await axios.put(
+      await api.put(
         `/api/users/like/${songId}`,
         {},
         {
@@ -201,9 +202,23 @@ function Playlist() {
     }
   };
 
-  if (loading)
+if (loading)
     return (
-      <div className="p-10 text-center text-muted-foreground">Cargando...</div>
+      <div className="space-y-6 p-6">
+        <div className="flex gap-6 items-end">
+          <Skeleton className="h-52 w-52 rounded-lg" />
+          <div className="space-y-4 flex-1">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-10 w-2/3" />
+            <Skeleton className="h-4 w-1/3" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </div>
+      </div>
     );
   if (error)
     return <div className="p-10 text-center text-destructive">{error}</div>;
