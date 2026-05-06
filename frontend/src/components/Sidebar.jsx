@@ -96,7 +96,7 @@ function Sidebar() {
           "w-full justify-start gap-4 mb-1",
           isCollapsed ? "justify-center px-2" : "px-4",
           isActive && "bg-accent text-accent-foreground",
-          className
+          className,
         )}
       >
         {/* If it has an image, we show it, otherwise we show the icon */}
@@ -137,15 +137,15 @@ function Sidebar() {
     <TooltipProvider>
       <aside
         className={cn(
-          "relative flex flex-col h-screen border-r border-border bg-card transition-all duration-300",
-          isCollapsed ? "w-[80px]" : "w-[280px]"
+          "relative flex flex-col h-full border-r border-border bg-card transition-all duration-300",
+          isCollapsed ? "w-[80px]" : "w-[280px]",
         )}
       >
         {/* LOGO AND BUTTON TOGGLE */}
         <div
           className={cn(
             "flex items-center p-6",
-            isCollapsed ? "justify-center px-2" : "justify-between"
+            isCollapsed ? "justify-center px-2" : "justify-between",
           )}
         >
           <Link to="/" className="flex items-center gap-2 overflow-hidden">
@@ -218,7 +218,7 @@ function Sidebar() {
                     playlist.coverImagePath
                       ? `http://localhost:3000/${playlist.coverImagePath.replace(
                           /\\/g,
-                          "/"
+                          "/",
                         )}`
                       : null
                   }
@@ -236,7 +236,7 @@ function Sidebar() {
           <div
             className={cn(
               "flex items-center gap-3 mb-2",
-              isCollapsed ? "justify-center" : "px-2"
+              isCollapsed ? "justify-center" : "px-2",
             )}
           >
             <Avatar className="h-9 w-9 border border-border cursor-pointer hover:ring-2 ring-primary transition-all">
