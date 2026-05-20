@@ -35,6 +35,33 @@ function Sidebar() {
   const { recent } = useRecentPlaylists();
   const location = useLocation();
 
+  // Validate and clean up deleted playlists from local storage recents
+  useEffect(() => {
+    if (!user) return;
+
+    const validateRecent = async () => {
+      try {
+        const res = await api.get("/api/playlists/my", {
+          headers: { Authorization: `Bearer ${user.token}` },
+        });
+        if (Array.isArray(res.data)) {
+          const activeIds = new Set(res.data.map((p) => p._id));
+          const stored = JSON.parse(localStorage.getItem("recentPlaylists") || "[]");
+          const filtered = stored.filter((r) => activeIds.has(r._id));
+          
+          if (filtered.length !== stored.length) {
+            localStorage.setItem("recentPlaylists", JSON.stringify(filtered));
+            window.dispatchEvent(new Event("recentPlaylistsUpdated"));
+          }
+        }
+      } catch (err) {
+        console.error("Error validating recent playlists:", err);
+      }
+    };
+
+    validateRecent();
+  }, [user]);
+
   // Navigation list
   const navItems = [
     { icon: Home, label: "Inicio", path: "/" },

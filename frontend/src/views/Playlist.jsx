@@ -54,7 +54,7 @@ import {
 function Playlist() {
   const { id } = useParams();
   const { user } = useAuthContext();
-  const { addRecent } = useRecentPlaylists();
+  const { addRecent, removeRecent } = useRecentPlaylists();
   const navigate = useNavigate();
   const { playSong, currentSong, isPlaying } = usePlayer();
 
@@ -298,6 +298,7 @@ function Playlist() {
       await api.delete(`/api/playlists/${id}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
+      removeRecent(id);
       navigate("/");
       toast.success("Playlist eliminada");
     } catch (err) {
