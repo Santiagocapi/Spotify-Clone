@@ -12,6 +12,7 @@ import UploadSong from "./views/UploadSong.jsx";
 import CreatePlaylist from "./views/CreatePlaylist.jsx";
 import Playlist from "./views/Playlist.jsx";
 import LikedSongs from "./views/LikedSongs.jsx";
+import SearchResults from "./views/SearchResults.jsx";
 
 // Import Context
 import { AuthProvider } from "./context/AuthContext.jsx";
@@ -51,6 +52,7 @@ const router = createBrowserRouter([
             element: <Playlist />,
           },
           { path: "/collection/tracks", element: <LikedSongs /> },
+          { path: "/search", element: <SearchResults /> },
         ],
       },
 

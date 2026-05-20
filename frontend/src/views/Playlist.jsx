@@ -2,18 +2,20 @@ import React, { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 import { useAuthContext } from "../context/AuthContext";
+import { useRecentPlaylists } from "../hooks/useRecentPlaylists";
 import { usePlayer } from "../context/PlayerContext";
 import { cn, formatTime } from "@/lib/utils";
-
-// UI Components
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { SortableSongRow } from "@/components/SortableSongRow";
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -22,6 +24,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -38,17 +46,59 @@ import {
   Edit2,
   Camera,
   Heart,
+  MoreVertical,
+  Check,
+  Circle,
 } from "lucide-react";
 
 function Playlist() {
   const { id } = useParams();
   const { user } = useAuthContext();
+  const { addRecent, removeRecent } = useRecentPlaylists();
   const navigate = useNavigate();
   const { playSong, currentSong, isPlaying } = usePlayer();
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  const onDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setPlaylist((prev) => {
+      const oldIndex = prev.songs.findIndex((s) => (s.song?._id || s._id) === active.id);
+      const newIndex = prev.songs.findIndex((s) => (s.song?._id || s._id) === over.id);
+      
+      const newSongs = arrayMove(prev.songs, oldIndex, newIndex);
+      
+      const songsForBackend = newSongs.map(item => ({
+        song: item.song?._id || item.song || item,
+        addedAt: item.addedAt
+      }));
+      
+      api.put(`/api/playlists/${id}/reorder`, { songs: songsForBackend }, {
+          headers: { Authorization: `Bearer ${user.token}` }
+      }).catch(err => {
+          console.error(err);
+          setPlaylist(prev);
+          toast.error(err.response?.data?.message || "Error al guardar el nuevo orden");
+      });
+
+      return { ...prev, songs: newSongs };
+    });
+  };
+
   const [playlist, setPlaylist] = useState(null);
-  const [allSongs, setAllSongs] = useState([]);
+  const [userPlaylists, setUserPlaylists] = useState([]);
+  const [allSongs, setAllSongs] = useState([]); // Songs list and add songs
   const [loading, setLoading] = useState(true);
+  const [isAddToPlaylistOpen, setIsAddToPlaylistOpen] = useState(false);
+  const [songToAddToOther, setSongToAddToOther] = useState(null);
   const [error, setError] = useState(null);
   const [showAddSection, setShowAddSection] = useState(false);
   const [likedSongs, setLikedSongs] = useState([]);
@@ -67,8 +117,14 @@ function Playlist() {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         setPlaylist(playlistRes.data);
+        addRecent(playlistRes.data);
         setEditName(playlistRes.data.name);
         setEditDesc(playlistRes.data.description || "");
+
+        const userPlaylistsRes = await api.get("/api/playlists/my", {
+          headers: { Authorization: `Bearer ${user.token}` },
+        });
+        setUserPlaylists(userPlaylistsRes.data);
 
         const songsRes = await api.get("/api/songs");
         setAllSongs(songsRes.data);
@@ -143,28 +199,95 @@ function Playlist() {
     }
   };
 
+  // Function to Add/Remove from Another Playlist
+  const handleToggleSong = async (playlistId, songId, isAlreadyAdded) => {
+    // 1. Snapshot for rollback
+    const originalPlaylists = JSON.parse(JSON.stringify(userPlaylists));
+    const originalPlaylist = playlist ? { ...playlist } : null;
+
+    // 2. Optimistic update for other playlists list
+    setUserPlaylists(prev => prev.map(p => {
+        if (p._id === playlistId) {
+            if (isAlreadyAdded) {
+                // Remove song
+                return { ...p, songs: p.songs.filter(s => (s.song?._id || s._id) !== songId) };
+            } else {
+                // Add song
+                return { ...p, songs: [...p.songs, { song: songToAddToOther }] };
+            }
+        }
+        return p;
+    }));
+
+    // Optimistic update for the currently viewed playlist (if it is the same one)
+    if (playlist && playlistId === id) {
+      setPlaylist(prev => {
+        if (isAlreadyAdded) {
+          // Remove song
+          return {
+            ...prev,
+            songs: prev.songs.filter(s => (s.song?._id || s._id) !== songId)
+          };
+        } else {
+          // Add song
+          return {
+            ...prev,
+            songs: [...prev.songs, { song: songToAddToOther, addedAt: new Date().toISOString() }]
+          };
+        }
+      });
+    }
+
+    // 3. API call
+    try {
+      if (isAlreadyAdded) {
+        await api.put(`/api/playlists/${playlistId}/remove`, { songId }, {
+            headers: { Authorization: `Bearer ${user.token}` },
+        });
+        toast.success("Canción eliminada de la playlist");
+      } else {
+        await api.put(`/api/playlists/${playlistId}/add`, { songId }, {
+            headers: { Authorization: `Bearer ${user.token}` },
+        });
+        toast.success("Canción añadida exitosamente");
+      }
+    } catch (err) {
+      console.error(err);
+      // 4. Rollback on error
+      setUserPlaylists(originalPlaylists);
+      if (originalPlaylist) {
+        setPlaylist(originalPlaylist);
+      }
+      toast.error(err.response?.data?.message || "Error al actualizar la playlist");
+    }
+  };
+
   // Remove song from playlist
   const handleRemoveSong = async (songId) => {
-    toast.promise(
-      async () => {
-        await api.put(
-          `/api/playlists/${id}/remove`,
-          { songId },
-          {
-            headers: { Authorization: `Bearer ${user.token}` },
-          },
-        );
-        const res = await api.get(`/api/playlists/${id}`, {
+    // 1. Snapshot
+    const originalPlaylist = { ...playlist };
+
+    // 2. Optimistic Update
+    setPlaylist((prev) => ({
+      ...prev,
+      songs: prev.songs.filter((item) => (item.song?._id || item._id) !== songId),
+    }));
+
+    // 3. API Call
+    try {
+      await api.put(
+        `/api/playlists/${id}/remove`,
+        { songId },
+        {
           headers: { Authorization: `Bearer ${user.token}` },
-        });
-        setPlaylist(res.data);
-      },
-      {
-        loading: "Eliminando canción...",
-        success: "Canción eliminada de la playlist",
-        error: "Error al eliminar la canción",
-      },
-    );
+        },
+      );
+      toast.success("Canción eliminada de la playlist");
+    } catch (err) {
+      // 4. Rollback
+      setPlaylist(originalPlaylist);
+      toast.error(err.response?.data?.message || "Error al eliminar la canción");
+    }
   };
 
   // Delete playlist
@@ -175,6 +298,7 @@ function Playlist() {
       await api.delete(`/api/playlists/${id}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
+      removeRecent(id);
       navigate("/");
       toast.success("Playlist eliminada");
     } catch (err) {
@@ -364,131 +488,154 @@ if (loading)
       {/* SONGS TABLE */}
       {playlist.songs.length > 0 ? (
         <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[50px] text-center">#</TableHead>
-                <TableHead className="w-[60px]"></TableHead>
-                <TableHead>Título</TableHead>
-                <TableHead>Artista</TableHead>
-                <TableHead>Álbum</TableHead>
-                <TableHead className="hidden md:table-cell">Fecha</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-                <TableHead className="hidden sm:table-cell text-right">
-                  <Clock3 className="h-4 w-4 ml-auto" />
-                </TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {playlist.songs.map((item, index) => {
-                let song = item.song || item;
-
-                if (!song || !song._id) return null;
-
-                const isCurrentSong = currentSong?._id === song._id;
-
-                return (
-                  <TableRow key={song._id} className="group h-16">
-                    <TableCell className="font-medium text-muted-foreground text-center relative">
-                      <span
-                        className={cn(
-                          "group-hover:hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
-                          isCurrentSong && "text-primary",
-                        )}
-                      >
-                        {index + 1}
-                      </span>
-                      <button
-                        onClick={() => playSong(song, playlistSongs)}
-                        className="hidden group-hover:flex absolute inset-0 items-center justify-center text-primary"
-                      >
-                        <PlayCircle
-                          className={cn(
-                            "h-7 w-7 fill-primary text-primary hover:scale-110 transition-transform",
-                          )}
-                        />
-                      </button>
-                    </TableCell>
-
-                    {/* Image */}
-                    <TableCell>
-                      <div className="h-10 w-10 overflow-hidden rounded-sm bg-muted relative">
-                        {song.coverArtPath ? (
-                          <img
-                            src={`http://localhost:3000/${song.coverArtPath.replace(/\\/g, "/")}`}
-                            alt={song.title}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-secondary/50">
-                            <Music className="h-5 w-5 text-muted-foreground" />
-                          </div>
-                        )}
-                        {isCurrentSong && isPlaying && (
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                            <div className="h-2 w-2 bg-accent rounded-full animate-pulse"></div>
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-
-                    <TableCell
-                      className={cn(
-                        "font-medium truncate max-w-[200px]",
-                        isCurrentSong && "text-primary",
-                      )}
-                    >
-                      {song.title}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {song.artist}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {song.album}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
-                      {item.addedAt
-                        ? new Date(item.addedAt).toLocaleDateString()
-                        : "-"}
-                    </TableCell>
-
-                    {/* Like Button */}
-                    <TableCell>
-                      <button
-                        onClick={() => handleLike(song._id)}
-                        className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
-                      >
-                        <Heart
-                          className={cn(
-                            "h-5 w-5",
-                            likedSongs.includes(song._id) &&
-                              "fill-primary text-primary",
-                          )}
-                        />
-                      </button>
-                    </TableCell>
-
-                    <TableCell className="hidden sm:table-cell text-right text-muted-foreground font-mono text-xs">
-                      {formatTime(song.duration)}
-                    </TableCell>
-
-                    {/* Remove Button */}
-                    <TableCell className="text-right">
-                      <Button
-                        onClick={() => handleRemoveSong(song._id)}
-                        variant="ghost"
-                        size="icon"
-                        className="opacity-0 transition-opacity group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+          <DndContext 
+            sensors={sensors} 
+            collisionDetection={closestCenter} 
+            onDragEnd={onDragEnd}
+          >
+            <SortableContext 
+              items={playlist.songs.map((s) => s.song?._id || s._id)} 
+              strategy={verticalListSortingStrategy}
+            >
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[50px]">#</TableHead>
+                    <TableHead className="w-[60px]"></TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Artist</TableHead>
+                    <TableHead>Album</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      Date Added
+                    </TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead className="hidden sm:table-cell text-right">
+                      <Clock3 className="h-4 w-4 inline-block ml-auto" />
+                    </TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                  {playlist.songs.map((item, index) => {
+                    const song = item.song || item;
+                    if (!song || !song._id || !song.title) return null;
+                    const isCurrentSong = currentSong?._id === song._id;
+
+                    return (
+                      <SortableSongRow key={song._id} song={song}>
+                        <TableCell className="font-medium text-muted-foreground text-center relative">
+                          <span
+                            className={cn(
+                              "group-hover:hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
+                              isCurrentSong && "text-primary",
+                            )}
+                          >
+                            {index + 1}
+                          </span>
+                          <button
+                            onClick={() => playSong(song, playlistSongs)}
+                            className="hidden group-hover:flex absolute inset-0 items-center justify-center text-primary"
+                          >
+                            <PlayCircle
+                              className={cn(
+                                "h-7 w-7 fill-primary text-primary hover:scale-110 transition-transform",
+                              )}
+                            />
+                          </button>
+                        </TableCell>
+
+                        {/* Image */}
+                        <TableCell>
+                          <div className="h-10 w-10 overflow-hidden rounded-sm bg-muted relative">
+                            {song.coverArtPath ? (
+                              <img
+                                src={`http://localhost:3000/${song.coverArtPath.replace(/\\/g, "/")}`}
+                                alt={song.title}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-secondary/50">
+                                <Music className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                            )}
+                            {isCurrentSong && isPlaying && (
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                <div className="h-2 w-2 bg-accent rounded-full animate-pulse"></div>
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+
+                        <TableCell
+                          className={cn(
+                            "font-medium truncate max-w-[200px]",
+                            isCurrentSong && "text-primary",
+                          )}
+                        >
+                          <span className={cn(isCurrentSong && "text-primary")}>
+                            {song.title}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {song.artist}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {song.album}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+                          {item.addedAt
+                            ? new Date(item.addedAt).toLocaleDateString()
+                            : "-"}
+                        </TableCell>
+
+                        {/* Like Button */}
+                        <TableCell>
+                          <button
+                            onClick={() => handleLike(song._id)}
+                            className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                          >
+                            <Heart
+                              className={cn(
+                                "h-5 w-5",
+                                likedSongs.includes(song._id) &&
+                                  "fill-primary text-primary",
+                              )}
+                            />
+                          </button>
+                        </TableCell>
+
+                        <TableCell className="hidden sm:table-cell text-right text-muted-foreground font-mono text-xs">
+                          {formatTime(song.duration)}
+                        </TableCell>
+
+                    {/* Action Button */}
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                           <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary">
+                             <MoreVertical className="h-4 w-4" />
+                           </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                           <DropdownMenuItem onClick={() => {
+                               setSongToAddToOther(song);
+                               setIsAddToPlaylistOpen(true);
+                           }}>
+                             Añadir a otra playlist
+                           </DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => handleRemoveSong(song._id)} className="text-destructive">
+                             Eliminar de la playlist
+                           </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                      </SortableSongRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </SortableContext>
+          </DndContext>
         </div>
       ) : (
         <div className="py-20 text-center text-muted-foreground">
@@ -502,6 +649,49 @@ if (loading)
           </Button>
         </div>
       )}
+
+      {/* ADD TO OTHER PLAYLIST MODAL */}
+      <Dialog open={isAddToPlaylistOpen} onOpenChange={setIsAddToPlaylistOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Añadir a otra playlist</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-2 py-4">
+            {userPlaylists.map((p) => {
+              const isAlreadyAdded = p.songs.some(
+                (s) => (s.song?._id || s._id) === songToAddToOther?._id
+              );
+              return (
+                <Button
+                  key={p._id}
+                  variant="ghost"
+                  className="justify-start gap-3 h-14 w-full"
+                  onClick={() => handleToggleSong(p._id, songToAddToOther?._id, isAlreadyAdded)}
+                >
+                  <div className="h-10 w-10 bg-muted rounded overflow-hidden">
+                    {p.coverImagePath ? (
+                      <img
+                        src={`http://localhost:3000/${p.coverImagePath.replace(/\\/g, "/")}`}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <Music className="h-5 w-5 text-muted-foreground m-auto" />
+                    )}
+                  </div>
+                  <div className="flex-1 text-left flex justify-between items-center">
+                    {p.name}
+                    {isAlreadyAdded ? (
+                      <Check className="h-5 w-5 text-primary" />
+                    ) : (
+                      <Circle className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </div>
+                </Button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* EDIT MODAL */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>

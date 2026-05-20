@@ -9,6 +9,7 @@ const {
   addSongToPlaylist,
   getPlaylistById,
   removeSongFromPlaylist,
+  reorderSongs,
   deletePlaylist,
   editPlaylist,
 } = require("../controllers/playlistController");
@@ -60,6 +61,10 @@ router.get("/:id", protect, getPlaylistById);
 // PUT /api/playlists/:id/remove - Remove a song from a playlist
 // PRIVATE
 router.put("/:id/remove", protect, removeSongFromPlaylist);
+
+// PUT /api/playlists/:id/reorder - Reorder songs in a playlist
+// PRIVATE
+router.put("/:id/reorder", protect, reorderSongs);
 
 // DELETE /api/playlists/:id - Delete a playlist
 // PRIVATE

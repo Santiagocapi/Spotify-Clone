@@ -3,20 +3,15 @@ import { Link, useLocation } from "react-router-dom";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { useAuthContext } from "../context/AuthContext";
+import { useRecentPlaylists } from "../hooks/useRecentPlaylists";
 // Logo
 import OurMusicLogo from "@/components/Logo";
 
 // Icons Lucid React
 import {
   Home,
-  Search,
-  Library,
-  PlusCircle,
-  Upload,
   ChevronLeft,
   ChevronRight,
-  LogOut,
-  ListMusic,
   Disc,
   Heart,
 } from "lucide-react";
@@ -24,7 +19,6 @@ import {
 // UI Components (Shadcn UI)
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
@@ -36,47 +30,41 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function Sidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [playlists, setPlaylists] = useState([]);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const { user, loading, dispatch } = useAuthContext();
+  const { recent } = useRecentPlaylists();
   const location = useLocation();
 
+  // Validate and clean up deleted playlists from local storage recents
   useEffect(() => {
-    if (!user || loading) {
-      setPlaylists([]);
-      return;
-    }
+    if (!user) return;
 
-    const fetchPlaylists = async () => {
+    const validateRecent = async () => {
       try {
         const res = await api.get("/api/playlists/my", {
           headers: { Authorization: `Bearer ${user.token}` },
         });
-        setPlaylists(res.data);
-      } catch (error) {
-        console.error("Error cargando playlists en sidebar", error);
-        toast.error("Error al cargar tus playlists");
+        if (Array.isArray(res.data)) {
+          const activeIds = new Set(res.data.map((p) => p._id));
+          const stored = JSON.parse(localStorage.getItem("recentPlaylists") || "[]");
+          const filtered = stored.filter((r) => activeIds.has(r._id));
+          
+          if (filtered.length !== stored.length) {
+            localStorage.setItem("recentPlaylists", JSON.stringify(filtered));
+            window.dispatchEvent(new Event("recentPlaylistsUpdated"));
+          }
+        }
+      } catch (err) {
+        console.error("Error validating recent playlists:", err);
       }
     };
 
-    fetchPlaylists();
-  }, [user, loading]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    dispatch({ type: "LOGOUT" });
-  };
+    validateRecent();
+  }, [user]);
 
   // Navigation list
   const navItems = [
     { icon: Home, label: "Inicio", path: "/" },
-    { icon: Search, label: "Explorar", path: "/explore" },
-    { icon: ListMusic, label: "Playlists", path: "/playlists" },
-  ];
-
-  const libraryItems = [
-    { icon: PlusCircle, label: "Crear Playlist", path: "/create-playlist" },
-    { icon: Upload, label: "Subir Canción", path: "/upload" },
   ];
 
   // Auxiliary component to render buttons with Tooltip
@@ -121,7 +109,11 @@ function Sidebar() {
     if (isCollapsed) {
       return (
         <Tooltip delayDuration={0}>
-          <TooltipTrigger asChild>{content}</TooltipTrigger>
+          <TooltipTrigger asChild>
+            <Link to={path} className="w-full block">
+              {content}
+            </Link>
+          </TooltipTrigger>
           <TooltipContent side="right" className="font-medium">
             {label}
           </TooltipContent>
@@ -196,104 +188,29 @@ function Sidebar() {
 
           <Separator className="my-4 opacity-50" />
 
-          {/* PLAYLISTS */}
           <div className="mt-4">
             {!isCollapsed && (
               <h3 className="mb-2 px-4 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
-                Tus Playlists
+                Recientes
               </h3>
             )}
-
             <div className="space-y-1">
-              {/* liked songs button */}
-              <NavButton
-                icon={Heart}
-                label="Tus Me Gusta"
-                path="/collection/tracks"
-                className="text-primary hover:text-primary hover:bg-primary/10"
-              />
-              {/* playlist list */}
-              {loading ? (
-                <div className="space-y-2 px-2 mt-2">
-                  {[...Array(4)].map((_, i) => (
-                    <Skeleton key={i} className="h-8 w-full" />
-                  ))}
-                </div>
-              ) : (
-                playlists.map((playlist) => (
-                  <NavButton
-                    key={playlist._id}
-                    icon={Disc}
-                    image={
-                      playlist.coverImagePath
-                        ? `http://localhost:3000/${playlist.coverImagePath.replace(
-                            /\\/g,
-                            "/",
-                          )}`
-                        : null
-                    }
-                    label={playlist.name}
-                    path={`/playlist/${playlist._id}`}
-                  />
-                ))
-              )}
+              {recent.map((playlist) => (
+                <NavButton
+                  key={playlist._id}
+                  icon={Disc}
+                  image={
+                    playlist.coverImagePath
+                      ? `http://localhost:3000/${playlist.coverImagePath.replace(/\\/g, "/")}`
+                      : null
+                  }
+                  label={playlist.name}
+                  path={`/playlist/${playlist._id}`}
+                />
+              ))}
             </div>
           </div>
         </ScrollArea>
-
-        {/* FOOTER ( User + Logout Button) */}
-        <div className="p-3 mt-auto border-t border-border bg-background/50">
-          {/* User */}
-          <div
-            className={cn(
-              "flex items-center gap-3 mb-2",
-              isCollapsed ? "justify-center" : "px-2",
-            )}
-          >
-            <Avatar className="h-9 w-9 border border-border cursor-pointer hover:ring-2 ring-primary transition-all">
-              <AvatarImage
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
-              />
-              <AvatarFallback>
-                {user?.email?.substring(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-
-            {!isCollapsed && (
-              <div className="flex flex-col overflow-hidden">
-                <span className="text-sm font-medium truncate">
-                  {user?.email}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* LOGOUT BUTTON*/}
-          {isCollapsed ? (
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={handleLogout}
-                  variant="ghost"
-                  size="icon"
-                  className="w-full h-10 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <LogOut size={20} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Cerrar Sesión</TooltipContent>
-            </Tooltip>
-          ) : (
-            <Button
-              onClick={handleLogout}
-              variant="ghost"
-              className="w-full justify-start gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            >
-              <LogOut size={18} />
-              Cerrar Sesión
-            </Button>
-          )}
-        </div>
       </aside>
     </TooltipProvider>
   );
