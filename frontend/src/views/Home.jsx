@@ -71,7 +71,9 @@ function Home() {
       } catch (err) {
         console.error("Error loading data:", err);
         setError("No se pudieron cargar las canciones.");
-        toast.error(err.response?.data?.message || "Error al cargar la librería.");
+        toast.error(
+          err.response?.data?.message || "Error al cargar la librería.",
+        );
       } finally {
         setLoading(false);
       }
@@ -152,7 +154,7 @@ function Home() {
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold tracking-tight text-foreground">
-              Your Playlists
+              Tus Playlist
             </h2>
 
             <Tooltip>
@@ -167,7 +169,7 @@ function Home() {
                   </Button>
                 </Link>
               </TooltipTrigger>
-              <TooltipContent>Create new playlist</TooltipContent>
+              <TooltipContent>Crear nueva Playlist</TooltipContent>
             </Tooltip>
           </div>
 
@@ -214,7 +216,7 @@ function Home() {
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold tracking-tight text-foreground">
-              Available Songs
+              Canciones
             </h2>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -228,7 +230,7 @@ function Home() {
                   </Button>
                 </Link>
               </TooltipTrigger>
-              <TooltipContent>Upload new song</TooltipContent>
+              <TooltipContent>Subir nueva Cancion</TooltipContent>
             </Tooltip>
           </div>
 

@@ -76,12 +76,17 @@ function Playlist() {
       
       const newSongs = arrayMove(prev.songs, oldIndex, newIndex);
       
-      api.put(`/api/playlists/${id}/reorder`, { songs: newSongs }, {
+      const songsForBackend = newSongs.map(item => ({
+        song: item.song?._id || item.song || item,
+        addedAt: item.addedAt
+      }));
+      
+      api.put(`/api/playlists/${id}/reorder`, { songs: songsForBackend }, {
           headers: { Authorization: `Bearer ${user.token}` }
       }).catch(err => {
           console.error(err);
           setPlaylist(prev);
-          toast.error("Error al guardar el nuevo orden");
+          toast.error(err.response?.data?.message || "Error al guardar el nuevo orden");
       });
 
       return { ...prev, songs: newSongs };
@@ -196,6 +201,44 @@ function Playlist() {
 
   // Function to Add/Remove from Another Playlist
   const handleToggleSong = async (playlistId, songId, isAlreadyAdded) => {
+    // 1. Snapshot for rollback
+    const originalPlaylists = JSON.parse(JSON.stringify(userPlaylists));
+    const originalPlaylist = playlist ? { ...playlist } : null;
+
+    // 2. Optimistic update for other playlists list
+    setUserPlaylists(prev => prev.map(p => {
+        if (p._id === playlistId) {
+            if (isAlreadyAdded) {
+                // Remove song
+                return { ...p, songs: p.songs.filter(s => (s.song?._id || s._id) !== songId) };
+            } else {
+                // Add song
+                return { ...p, songs: [...p.songs, { song: songToAddToOther }] };
+            }
+        }
+        return p;
+    }));
+
+    // Optimistic update for the currently viewed playlist (if it is the same one)
+    if (playlist && playlistId === id) {
+      setPlaylist(prev => {
+        if (isAlreadyAdded) {
+          // Remove song
+          return {
+            ...prev,
+            songs: prev.songs.filter(s => (s.song?._id || s._id) !== songId)
+          };
+        } else {
+          // Add song
+          return {
+            ...prev,
+            songs: [...prev.songs, { song: songToAddToOther, addedAt: new Date().toISOString() }]
+          };
+        }
+      });
+    }
+
+    // 3. API call
     try {
       if (isAlreadyAdded) {
         await api.put(`/api/playlists/${playlistId}/remove`, { songId }, {
@@ -208,38 +251,43 @@ function Playlist() {
         });
         toast.success("Canción añadida exitosamente");
       }
-      // Re-fetch to update the UI
-      const res = await api.get(`/api/playlists/${id}`, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
-      setPlaylist(res.data);
     } catch (err) {
+      console.error(err);
+      // 4. Rollback on error
+      setUserPlaylists(originalPlaylists);
+      if (originalPlaylist) {
+        setPlaylist(originalPlaylist);
+      }
       toast.error(err.response?.data?.message || "Error al actualizar la playlist");
     }
   };
 
   // Remove song from playlist
   const handleRemoveSong = async (songId) => {
-    toast.promise(
-      async () => {
-        await api.put(
-          `/api/playlists/${id}/remove`,
-          { songId },
-          {
-            headers: { Authorization: `Bearer ${user.token}` },
-          },
-        );
-        const res = await api.get(`/api/playlists/${id}`, {
+    // 1. Snapshot
+    const originalPlaylist = { ...playlist };
+
+    // 2. Optimistic Update
+    setPlaylist((prev) => ({
+      ...prev,
+      songs: prev.songs.filter((item) => (item.song?._id || item._id) !== songId),
+    }));
+
+    // 3. API Call
+    try {
+      await api.put(
+        `/api/playlists/${id}/remove`,
+        { songId },
+        {
           headers: { Authorization: `Bearer ${user.token}` },
-        });
-        setPlaylist(res.data);
-      },
-      {
-        loading: "Eliminando canción...",
-        success: "Canción eliminada de la playlist",
-        error: "Error al eliminar la canción",
-      },
-    );
+        },
+      );
+      toast.success("Canción eliminada de la playlist");
+    } catch (err) {
+      // 4. Rollback
+      setPlaylist(originalPlaylist);
+      toast.error(err.response?.data?.message || "Error al eliminar la canción");
+    }
   };
 
   // Delete playlist
@@ -439,33 +487,33 @@ if (loading)
       {/* SONGS TABLE */}
       {playlist.songs.length > 0 ? (
         <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[50px]">#</TableHead>
-                <TableHead className="w-[60px]"></TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Artist</TableHead>
-                <TableHead>Album</TableHead>
-                <TableHead className="hidden md:table-cell">
-                  Date Added
-                </TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-                <TableHead className="hidden sm:table-cell text-right">
-                  <Clock3 className="h-4 w-4 inline-block ml-auto" />
-                </TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <DndContext 
-              sensors={sensors} 
-              collisionDetection={closestCenter} 
-              onDragEnd={onDragEnd}
+          <DndContext 
+            sensors={sensors} 
+            collisionDetection={closestCenter} 
+            onDragEnd={onDragEnd}
+          >
+            <SortableContext 
+              items={playlist.songs.map((s) => s.song?._id || s._id)} 
+              strategy={verticalListSortingStrategy}
             >
-              <SortableContext 
-                items={playlist.songs.map((s) => s.song?._id || s._id)} 
-                strategy={verticalListSortingStrategy}
-              >
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[50px]">#</TableHead>
+                    <TableHead className="w-[60px]"></TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Artist</TableHead>
+                    <TableHead>Album</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      Date Added
+                    </TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead className="hidden sm:table-cell text-right">
+                      <Clock3 className="h-4 w-4 inline-block ml-auto" />
+                    </TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
                   {playlist.songs.map((item, index) => {
                     const song = item.song || item;
@@ -584,9 +632,9 @@ if (loading)
                     );
                   })}
                 </TableBody>
-              </SortableContext>
-            </DndContext>
-          </Table>
+              </Table>
+            </SortableContext>
+          </DndContext>
         </div>
       ) : (
         <div className="py-20 text-center text-muted-foreground">
@@ -617,7 +665,7 @@ if (loading)
                   key={p._id}
                   variant="ghost"
                   className="justify-start gap-3 h-14 w-full"
-                  onClick={() => handleToggleSong(p._id, songToAddToOther._id, isAlreadyAdded)}
+                  onClick={() => handleToggleSong(p._id, songToAddToOther?._id, isAlreadyAdded)}
                 >
                   <div className="h-10 w-10 bg-muted rounded overflow-hidden">
                     {p.coverImagePath ? (
@@ -641,46 +689,68 @@ if (loading)
               );
             })}
           </div>
-                  <div className="flex-1 text-left flex justify-between items-center">
-                    {p.name}
-                    {isAlreadyAdded ? (
-                      <Check className="h-5 w-5 text-primary" />
-                    ) : (
-                      <Circle className="h-5 w-5 text-muted-foreground" />
-                    )}
-                  </div>
-                </Button>
-              );
-            })}
-          </div>
         </DialogContent>
       </Dialog>
 
       {/* EDIT MODAL */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-      ...
-      </Dialog>
-
-      {/* ADD TO OTHER PLAYLIST MODAL */}
-      <Dialog open={isAddToPlaylistOpen} onOpenChange={setIsAddToPlaylistOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Añadir a otra playlist</DialogTitle>
+            <DialogTitle>Editar detalles</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-2 py-4">
-            {userPlaylists.map(p => (
-                <Button key={p._id} variant="ghost" className="justify-start gap-3 h-14" onClick={() => handleAddToOtherPlaylist(p._id)}>
-                    <div className="h-10 w-10 bg-muted rounded overflow-hidden">
-                        {p.coverImagePath ? (
-                            <img src={`http://localhost:3000/${p.coverImagePath.replace(/\\/g, "/")}`} className="h-full w-full object-cover" />
-                        ) : (
-                            <Music className="h-5 w-5 text-muted-foreground m-auto" />
-                        )}
-                    </div>
-                    {p.name}
-                </Button>
-            ))}
-          </div>
+          <form onSubmit={handleUpdatePlaylist} className="grid gap-4 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-4">
+              <div className="flex flex-col items-center gap-2">
+                <div className="h-40 w-40 bg-muted rounded-md flex items-center justify-center overflow-hidden relative border border-dashed border-zinc-400">
+                  {editFile ? (
+                    <img
+                      src={URL.createObjectURL(editFile)}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : playlist.coverImagePath ? (
+                    <img
+                      src={`http://localhost:3000/${playlist.coverImagePath.replace(/\\/g, "/")}`}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <Music className="h-12 w-12 text-muted-foreground" />
+                  )}
+                </div>
+                <Input
+                  id="picture"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setEditFile(e.target.files[0])}
+                  className="w-full text-xs cursor-pointer"
+                />
+              </div>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nombre</Label>
+                  <Input
+                    id="name"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="desc">Descripción</Label>
+                  <Textarea
+                    id="desc"
+                    placeholder="Añade una descripción opcional"
+                    value={editDesc}
+                    onChange={(e) => setEditDesc(e.target.value)}
+                    className="resize-none h-24"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? "Guardando..." : "Guardar"}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
