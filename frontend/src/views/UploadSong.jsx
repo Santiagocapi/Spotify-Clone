@@ -59,7 +59,6 @@ function UploadSong() {
       const res = await api.post("/api/songs/bulk", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${user.token}`,
         },
       });
             toast.success(`¡Listo! ${res.data.details.length} canciones añadidas.`);

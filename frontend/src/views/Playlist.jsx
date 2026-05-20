@@ -57,6 +57,7 @@ function Playlist() {
   const { addRecent, removeRecent } = useRecentPlaylists();
   const navigate = useNavigate();
   const { playSong, currentSong, isPlaying } = usePlayer();
+  const API_URL = import.meta.env.VITE_API_URL || "";
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -81,9 +82,7 @@ function Playlist() {
         addedAt: item.addedAt
       }));
       
-      api.put(`/api/playlists/${id}/reorder`, { songs: songsForBackend }, {
-          headers: { Authorization: `Bearer ${user.token}` }
-      }).catch(err => {
+      api.put(`/api/playlists/${id}/reorder`, { songs: songsForBackend }).catch(err => {
           console.error(err);
           setPlaylist(prev);
           toast.error(err.response?.data?.message || "Error al guardar el nuevo orden");
@@ -113,26 +112,20 @@ function Playlist() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const playlistRes = await api.get(`/api/playlists/${id}`, {
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
+        const playlistRes = await api.get(`/api/playlists/${id}`);
         setPlaylist(playlistRes.data);
         addRecent(playlistRes.data);
         setEditName(playlistRes.data.name);
         setEditDesc(playlistRes.data.description || "");
 
-        const userPlaylistsRes = await api.get("/api/playlists/my", {
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
+        const userPlaylistsRes = await api.get("/api/playlists/my");
         setUserPlaylists(userPlaylistsRes.data);
 
         const songsRes = await api.get("/api/songs");
         setAllSongs(songsRes.data);
 
         try {
-          const userLikesRes = await api.get("/api/users/liked", {
-            headers: { Authorization: `Bearer ${user.token}` },
-          });
+          const userLikesRes = await api.get("/api/users/liked");
           if (Array.isArray(userLikesRes.data)) {
             const ids = userLikesRes.data.map((s) => s._id);
             setLikedSongs(ids);
@@ -166,7 +159,6 @@ function Playlist() {
       const res = await api.put(`/api/playlists/${id}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${user.token}`,
         },
       });
       setPlaylist(res.data);
@@ -185,14 +177,9 @@ function Playlist() {
       await api.put(
         `/api/playlists/${id}/add`,
         { songId },
-        {
-          headers: { Authorization: `Bearer ${user.token}` },
-        },
       );
       toast.success("Canción añadida correctamente");
-      const res = await api.get(`/api/playlists/${id}`, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
+      const res = await api.get(`/api/playlists/${id}`);
       setPlaylist(res.data);
     } catch (err) {
       toast.error(err.response?.data?.message || "Error al añadir la canción");
@@ -241,14 +228,10 @@ function Playlist() {
     // 3. API call
     try {
       if (isAlreadyAdded) {
-        await api.put(`/api/playlists/${playlistId}/remove`, { songId }, {
-            headers: { Authorization: `Bearer ${user.token}` },
-        });
+        await api.put(`/api/playlists/${playlistId}/remove`, { songId });
         toast.success("Canción eliminada de la playlist");
       } else {
-        await api.put(`/api/playlists/${playlistId}/add`, { songId }, {
-            headers: { Authorization: `Bearer ${user.token}` },
-        });
+        await api.put(`/api/playlists/${playlistId}/add`, { songId });
         toast.success("Canción añadida exitosamente");
       }
     } catch (err) {
@@ -278,9 +261,6 @@ function Playlist() {
       await api.put(
         `/api/playlists/${id}/remove`,
         { songId },
-        {
-          headers: { Authorization: `Bearer ${user.token}` },
-        },
       );
       toast.success("Canción eliminada de la playlist");
     } catch (err) {
@@ -295,9 +275,7 @@ function Playlist() {
     if (!window.confirm("¿Estás seguro de eliminar esta playlist entera?"))
       return;
     try {
-      await api.delete(`/api/playlists/${id}`, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
+      await api.delete(`/api/playlists/${id}`);
       removeRecent(id);
       navigate("/");
       toast.success("Playlist eliminada");
@@ -312,9 +290,6 @@ function Playlist() {
       await api.put(
         `/api/users/like/${songId}`,
         {},
-        {
-          headers: { Authorization: `Bearer ${user.token}` },
-        },
       );
       if (likedSongs.includes(songId)) {
         setLikedSongs(likedSongs.filter((lid) => lid !== songId));
@@ -372,7 +347,7 @@ if (loading)
         >
           {playlist.coverImagePath ? (
             <img
-              src={`http://localhost:3000/${playlist.coverImagePath.replace(/\\/g, "/")}`}
+              src={`${API_URL}/${playlist.coverImagePath.replace(/\\/g, "/")}`}
               alt={playlist.name}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
@@ -549,7 +524,7 @@ if (loading)
                           <div className="h-10 w-10 overflow-hidden rounded-sm bg-muted relative">
                             {song.coverArtPath ? (
                               <img
-                                src={`http://localhost:3000/${song.coverArtPath.replace(/\\/g, "/")}`}
+                                src={`${API_URL}/${song.coverArtPath.replace(/\\/g, "/")}`}
                                 alt={song.title}
                                 className="h-full w-full object-cover"
                               />
@@ -671,7 +646,7 @@ if (loading)
                   <div className="h-10 w-10 bg-muted rounded overflow-hidden">
                     {p.coverImagePath ? (
                       <img
-                        src={`http://localhost:3000/${p.coverImagePath.replace(/\\/g, "/")}`}
+                        src={`${API_URL}/${p.coverImagePath.replace(/\\/g, "/")}`}
                         className="h-full w-full object-cover"
                       />
                     ) : (
@@ -710,7 +685,7 @@ if (loading)
                     />
                   ) : playlist.coverImagePath ? (
                     <img
-                      src={`http://localhost:3000/${playlist.coverImagePath.replace(/\\/g, "/")}`}
+                      src={`${API_URL}/${playlist.coverImagePath.replace(/\\/g, "/")}`}
                       className="h-full w-full object-cover"
                     />
                   ) : (

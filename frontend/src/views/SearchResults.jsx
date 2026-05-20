@@ -12,6 +12,7 @@ function SearchResults() {
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   const { playSong } = usePlayer();
+  const API_URL = import.meta.env.VITE_API_URL || "";
 
   useEffect(() => {
     const fetchSongs = async () => {
@@ -44,7 +45,7 @@ function SearchResults() {
             <CardContent className="p-4">
               <div className="aspect-square bg-muted mb-2 rounded-md overflow-hidden">
                 {song.coverArtPath ? (
-                    <img src={`http://localhost:3000/${song.coverArtPath.replace(/\\/g, "/")}`} className="h-full w-full object-cover" />
+                    <img src={`${API_URL}/${song.coverArtPath.replace(/\\/g, "/")}`} className="h-full w-full object-cover" />
                 ) : (
                     <div className="flex h-full w-full items-center justify-center text-muted-foreground/50">
                         <Music className="h-10 w-10" />

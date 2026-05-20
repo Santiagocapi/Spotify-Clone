@@ -35,6 +35,7 @@ function Home() {
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const API_URL = import.meta.env.VITE_API_URL || "";
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,9 +62,7 @@ function Home() {
 
         // 2. Fetch Playlists (Only if user is logged in)
         if (user) {
-          const playlistsRes = await api.get("/api/playlists/my", {
-            headers: { Authorization: `Bearer ${user.token}` },
-          });
+          const playlistsRes = await api.get("/api/playlists/my");
           setPlaylists(
             Array.isArray(playlistsRes.data) ? playlistsRes.data : [],
           );
@@ -96,7 +95,6 @@ function Home() {
       await api.put(
         `/api/playlists/${playlistId}/add`,
         { songId: songToAdd._id },
-        { headers: { Authorization: `Bearer ${user.token}` } },
       );
 
       toast.success(`"${songToAdd.title}" added to ${playlistName}`);
@@ -183,7 +181,7 @@ function Home() {
                       <div className="mb-4 aspect-square w-full overflow-hidden rounded-md bg-zinc-100 shadow-sm relative">
                         {playlist.coverImagePath ? (
                           <img
-                            src={`http://localhost:3000/${playlist.coverImagePath.replace(/\\/g, "/")}`}
+                            src={`${API_URL}/${playlist.coverImagePath.replace(/\\/g, "/")}`}
                             alt={playlist.name}
                             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                           />
@@ -250,7 +248,7 @@ function Home() {
                       <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-md bg-muted">
                         {song.coverArtPath ? (
                           <img
-                            src={`http://localhost:3000/${song.coverArtPath.replace(/\\/g, "/")}`}
+                            src={`${API_URL}/${song.coverArtPath.replace(/\\/g, "/")}`}
                             alt={song.title}
                             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                           />
@@ -320,7 +318,7 @@ function Home() {
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-muted">
                           {p.coverImagePath ? (
                             <img
-                              src={`http://localhost:3000/${p.coverImagePath.replace(/\\/g, "/")}`}
+                              src={`${API_URL}/${p.coverImagePath.replace(/\\/g, "/")}`}
                               className="h-full w-full object-cover rounded"
                             />
                           ) : (

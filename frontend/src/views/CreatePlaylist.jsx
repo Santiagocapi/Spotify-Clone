@@ -38,15 +38,7 @@ function CreatePlaylist() {
 
   const onSubmit = async (data) => {
     try {
-      await api.post(
-        "/api/playlists",
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
-        }
-      );
+      await api.post("/api/playlists", data);
       toast.success("Playlist creada exitosamente");
       navigate("/");
     } catch (err) {

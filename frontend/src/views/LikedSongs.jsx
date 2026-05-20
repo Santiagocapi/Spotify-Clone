@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "@/lib/api";
 
 // Context
 import { useAuthContext } from "../context/AuthContext";
@@ -24,6 +24,7 @@ import { Heart, Clock3, Music, PlayCircle } from "lucide-react";
 function LikedSongs() {
   const { user } = useAuthContext();
   const { playSong, currentSong, isPlaying } = usePlayer();
+  const API_URL = import.meta.env.VITE_API_URL || "";
 
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,9 +33,7 @@ function LikedSongs() {
   useEffect(() => {
     const fetchLiked = async () => {
       try {
-        const res = await axios.get("/api/users/liked", {
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
+        const res = await api.get("/api/users/liked");
         setSongs(res.data); // The endpoint returns the array of songs directly
       } catch (err) {
         console.error(err);
@@ -48,13 +47,7 @@ function LikedSongs() {
   // Function to remove like (remove from this list)
   const handleRemoveLike = async (songId) => {
     try {
-      await axios.put(
-        `/api/users/like/${songId}`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${user.token}` },
-        }
-      );
+      await api.put(`/api/users/like/${songId}`, {});
       // Update the list visually removing the song
       setSongs(songs.filter((s) => s._id !== songId));
     } catch (err) {
@@ -141,7 +134,7 @@ function LikedSongs() {
                     <div className="h-10 w-10 overflow-hidden rounded bg-muted relative">
                       {song.coverArtPath ? (
                         <img
-                          src={`http://localhost:3000/${song.coverArtPath.replace(
+                          src={`${API_URL}/${song.coverArtPath.replace(
                             /\\/g,
                             "/"
                           )}`}
