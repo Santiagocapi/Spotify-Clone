@@ -70,8 +70,9 @@ function Player() {
   if (!currentSong) return null; // If no song is selected, we do not display the player.
 
   // We construct the URLs (Optional: You could move this to a helper function)
+  const API_URL = import.meta.env.VITE_API_URL || "";
   const coverUrl = currentSong.coverArtPath
-    ? `http://localhost:3000/${currentSong.coverArtPath.replace(/\\/g, "/")}`
+    ? `${API_URL}/${currentSong.coverArtPath.replace(/\\/g, "/")}`
     : null;
 
   return (

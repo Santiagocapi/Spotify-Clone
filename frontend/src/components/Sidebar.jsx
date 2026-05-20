@@ -34,6 +34,7 @@ function Sidebar() {
   const { user, loading, dispatch } = useAuthContext();
   const { recent } = useRecentPlaylists();
   const location = useLocation();
+  const API_URL = import.meta.env.VITE_API_URL || "";
 
   // Validate and clean up deleted playlists from local storage recents
   useEffect(() => {
@@ -41,9 +42,7 @@ function Sidebar() {
 
     const validateRecent = async () => {
       try {
-        const res = await api.get("/api/playlists/my", {
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
+        const res = await api.get("/api/playlists/my");
         if (Array.isArray(res.data)) {
           const activeIds = new Set(res.data.map((p) => p._id));
           const stored = JSON.parse(localStorage.getItem("recentPlaylists") || "[]");
@@ -201,7 +200,7 @@ function Sidebar() {
                   icon={Disc}
                   image={
                     playlist.coverImagePath
-                      ? `http://localhost:3000/${playlist.coverImagePath.replace(/\\/g, "/")}`
+                      ? `${API_URL}/${playlist.coverImagePath.replace(/\\/g, "/")}`
                       : null
                   }
                   label={playlist.name}

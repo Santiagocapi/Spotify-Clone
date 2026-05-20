@@ -20,12 +20,14 @@ export const PlayerProvider = ({ children }) => {
 
   const audioRef = useRef(new Audio());
 
+  const API_URL = import.meta.env.VITE_API_URL || "";
+
   // Effect to handle play/pause and song state
   useEffect(() => {
     if (currentSong) {
       const songPath = currentSong.filePath || currentSong.audioPath;
       // If the source changed, update it
-      const songUrl = `http://localhost:3000/${songPath.replace(/\\/g, "/")}`;
+      const songUrl = `${API_URL}/${songPath.replace(/\\/g, "/")}`;
       if (audioRef.current.src !== songUrl) {
         audioRef.current.src = songUrl;
         audioRef.current.load();
