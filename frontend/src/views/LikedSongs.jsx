@@ -38,23 +38,19 @@ import { Heart, Clock3, Music, PlayCircle, PauseCircle, Play, Pause, MoreVertica
 
 function LikedSongs() {
   const { user } = useAuthContext();
-  const { playSong, currentSong, isPlaying, addToQueue } = usePlayer();
+  const { playSong, currentSong, isPlaying, addToQueue, likedSongs, toggleLike } = usePlayer();
   const API_URL = import.meta.env.VITE_API_URL || "";
 
-  const [songs, setSongs] = useState([]);
   const [userPlaylists, setUserPlaylists] = useState([]);
   const [isAddToPlaylistOpen, setIsAddToPlaylistOpen] = useState(false);
   const [songToAddToOther, setSongToAddToOther] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load liked songs and user playlists
+  // Load user playlists
   useEffect(() => {
-    const fetchLikedAndPlaylists = async () => {
+    const fetchPlaylists = async () => {
       try {
-        const res = await api.get("/api/users/liked");
-        setSongs(res.data); // The endpoint returns the array of songs directly
-
         const playlistsRes = await api.get("/api/playlists/my");
         setUserPlaylists(playlistsRes.data);
       } catch (err) {
@@ -63,7 +59,7 @@ function LikedSongs() {
         setLoading(false);
       }
     };
-    if (user) fetchLikedAndPlaylists();
+    if (user) fetchPlaylists();
   }, [user]);
 
   useEffect(() => {
@@ -121,15 +117,8 @@ function LikedSongs() {
   };
 
   // Function to remove like (remove from this list)
-  const handleRemoveLike = async (songId) => {
-    try {
-      await api.put(`/api/users/like/${songId}`, {});
-      // Update the list visually removing the song
-      setSongs(songs.filter((s) => s._id !== songId));
-      toast.success("Eliminada de tus Me Gusta");
-    } catch (err) {
-      console.error(err);
-    }
+  const handleRemoveLike = (song) => {
+    toggleLike(song);
   };
 
   if (loading)
@@ -173,18 +162,18 @@ function LikedSongs() {
           <div className="flex items-center gap-2 text-sm font-medium opacity-90">
             <span className="text-primary-foreground dark:text-foreground">{user.username || (user.email ? user.email.split("@")[0] : "Usuario")}</span>
             <span className="text-primary-foreground/50 dark:text-muted-foreground/50">•</span>
-            <span className="text-primary-foreground/90 dark:text-muted-foreground/90">{songs.length} canciones</span>
+            <span className="text-primary-foreground/90 dark:text-muted-foreground/90">{likedSongs.length} canciones</span>
           </div>
         </div>
       </div>
 
       {/* ACTION BAR */}
-      {songs.length > 0 && (
+      {likedSongs.length > 0 && (
         <div className="flex items-center px-4">
           <Button
             size="icon"
             className="h-14 w-14 rounded-full bg-primary text-primary-foreground hover:scale-105 active:scale-95 shadow-md border-none animate-in fade-in zoom-in duration-300"
-            onClick={() => playSong(songs[0], songs)}
+            onClick={() => playSong(likedSongs[0], likedSongs)}
           >
             <Play className="h-6 w-6 fill-current ml-0.5" />
           </Button>
@@ -209,7 +198,7 @@ function LikedSongs() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {songs.map((song, index) => {
+            {likedSongs.map((song, index) => {
               if (!song) return null;
               const isCurrentSong = currentSong?._id === song._id;
 
@@ -234,7 +223,7 @@ function LikedSongs() {
                       )}
                     </span>
                     <button
-                      onClick={() => playSong(song, songs)}
+                      onClick={() => playSong(song, likedSongs)}
                       className="hidden group-hover:flex absolute inset-0 items-center justify-center"
                     >
                       <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:scale-110 active:scale-90 transition-transform">
@@ -288,7 +277,7 @@ function LikedSongs() {
                   {/* Botón de Like */}
                   <TableCell>
                     <button
-                      onClick={() => handleRemoveLike(song._id)}
+                      onClick={() => handleRemoveLike(song)}
                       className="hover:scale-110 transition-transform"
                       title="Quitar de Me Gusta"
                     >
@@ -319,9 +308,9 @@ function LikedSongs() {
                          }}>
                            Añadir a otra playlist
                          </DropdownMenuItem>
-                         <DropdownMenuItem onClick={() => handleRemoveLike(song._id)} className="text-destructive">
-                           Quitar de tus Me Gusta
-                         </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleRemoveLike(song)} className="text-destructive">
+                            Quitar de tus Me Gusta
+                          </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -330,7 +319,7 @@ function LikedSongs() {
             })}
           </TableBody>
         </Table>
-        {songs.length === 0 && (
+        {likedSongs.length === 0 && (
           <div className="py-20 text-center text-muted-foreground">
             <p>Aún no tienes canciones favoritas.</p>
           </div>
@@ -409,7 +398,7 @@ function LikedSongs() {
           <Separator className="my-1 bg-border/50" />
           <button
             onClick={() => {
-              handleRemoveLike(contextMenu.song._id);
+              handleRemoveLike(contextMenu.song);
               setContextMenu(null);
             }}
             className="flex w-full cursor-pointer select-none items-center rounded-lg px-2.5 py-2 text-xs font-semibold text-destructive hover:bg-destructive/10 outline-none transition-colors"

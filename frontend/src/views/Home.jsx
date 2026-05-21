@@ -34,7 +34,6 @@ function Home() {
   // State for data
   const [songs, setSongs] = useState([]);
   const [playlists, setPlaylists] = useState([]);
-  const [likedSongs, setLikedSongs] = useState([]); // State for liked songs
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const API_URL = import.meta.env.VITE_API_URL || "";
@@ -44,7 +43,7 @@ function Home() {
   const [songToAdd, setSongToAdd] = useState(null);
 
   const { user, loading: authLoading } = useAuthContext();
-  const { playSong } = usePlayer();
+  const { playSong, likedSongs } = usePlayer();
   const { recent } = useRecentPlaylists();
 
   // Sort playlists: most recently used first (from left to right)
@@ -82,10 +81,6 @@ function Home() {
           setPlaylists(
             Array.isArray(playlistsRes.data) ? playlistsRes.data : [],
           );
-
-          // Fetch Liked Songs
-          const likedRes = await api.get("/api/users/liked");
-          setLikedSongs(Array.isArray(likedRes.data) ? likedRes.data : []);
         }
       } catch (err) {
         console.error("Error loading data:", err);
