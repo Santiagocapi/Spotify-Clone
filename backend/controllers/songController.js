@@ -1,4 +1,6 @@
 const Song = require("../models/songModel");
+const User = require("../models/userModel");
+const Playlist = require("../models/playlistModel");
 const path = require("path"); // Node.js module for handling file paths
 const fs = require("fs"); // Node.js module for file system operations (To write the image to disk)
 const mm = require("music-metadata"); // music-metadata module for reading metadata from audio files
@@ -182,8 +184,70 @@ const getAllSongs = async (req, res) => {
   }
 };
 
+const deleteSong = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const song = await Song.findById(id);
+
+    if (!song) {
+      return res.status(404).json({ message: "Canción no encontrada." });
+    }
+
+    // Verify ownership
+    if (song.uploadedBy.toString() !== req.user._id.toString()) {
+      return res
+        .status(403)
+        .json({ message: "No autorizado para eliminar esta canción." });
+    }
+
+    // Remove references to this song from all user likedSongs
+    await User.updateMany(
+      { likedSongs: id },
+      { $pull: { likedSongs: id } }
+    );
+
+    // Remove references to this song from all playlist songs
+    await Playlist.updateMany(
+      { "songs.song": id },
+      { $pull: { songs: { song: id } } }
+    );
+
+    // Delete physical audio file
+    if (song.filePath) {
+      const absoluteAudioPath = path.join(__dirname, "../", song.filePath);
+      if (fs.existsSync(absoluteAudioPath)) {
+        fs.unlinkSync(absoluteAudioPath);
+      }
+    }
+
+    // Delete physical cover image file if no other song is using it
+    if (song.coverArtPath) {
+      const otherSongsWithCover = await Song.countDocuments({
+        _id: { $ne: id },
+        coverArtPath: song.coverArtPath,
+      });
+
+      if (otherSongsWithCover === 0) {
+        const absoluteCoverPath = path.join(__dirname, "../", song.coverArtPath);
+        if (fs.existsSync(absoluteCoverPath)) {
+          fs.unlinkSync(absoluteCoverPath);
+        }
+      }
+    }
+
+    // Delete song from database
+    await Song.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "Canción eliminada correctamente." });
+  } catch (error) {
+    console.error("Error al eliminar canción:", error);
+    res.status(500).json({ message: `Error del servidor: ${error.message}` });
+  }
+};
+
 module.exports = {
   uploadSong,
   getAllSongs,
   createSongsBulk,
+  deleteSong,
 };

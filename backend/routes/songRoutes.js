@@ -7,6 +7,7 @@ const {
   uploadSong,
   getAllSongs,
   createSongsBulk,
+  deleteSong,
 } = require("../controllers/songController");
 
 // Configure multer for file uploads
@@ -46,5 +47,7 @@ router.get("/", getAllSongs); // Define the route to get all songs (ENDPOINT)
 router.post("/upload", protect, upload.single("song"), uploadSong); // Define the route for uploading a unique song (ENDPOINT)
 
 router.post("/bulk", protect, upload.array("audio", 20), createSongsBulk); // Define the route for uploading multiple songs (ENDPOINT)
+
+router.delete("/:id", protect, deleteSong); // Define the route for deleting a song (ENDPOINT)
 
 module.exports = router;

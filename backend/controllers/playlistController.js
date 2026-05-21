@@ -1,6 +1,7 @@
 const Playlist = require("../models/playlistModel");
 const Song = require("../models/songModel");
 const path = require("path");
+const fs = require("fs");
 
 // @desc    Create a new playlist
 // @route   POST /api/playlists
@@ -192,6 +193,21 @@ const deletePlaylist = async (req, res) => {
     // Check if the user is the owner
     if (playlist.owner.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "No autorizado" });
+    }
+
+    // Delete physical cover image if it exists and no other playlist shares it
+    if (playlist.coverImagePath) {
+      const otherPlaylistsWithCover = await Playlist.countDocuments({
+        _id: { $ne: id },
+        coverImagePath: playlist.coverImagePath,
+      });
+
+      if (otherPlaylistsWithCover === 0) {
+        const absoluteCoverPath = path.join(__dirname, "../", playlist.coverImagePath);
+        if (fs.existsSync(absoluteCoverPath)) {
+          fs.unlinkSync(absoluteCoverPath);
+        }
+      }
     }
 
     await Playlist.findByIdAndDelete(id);

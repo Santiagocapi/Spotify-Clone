@@ -28,7 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 // Icons
-import { PlusCircle, Music, Disc, Plus, Heart, Play } from "lucide-react";
+import { PlusCircle, Music, Disc, Plus, Heart, Play, Trash2 } from "lucide-react";
 
 function Home() {
   // State for data
@@ -123,6 +123,31 @@ function Home() {
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.message || "Failed to add song.");
+    }
+  };
+
+  // Handle deleting song permanently
+  const handleDeleteSong = async (songId) => {
+    if (!window.confirm("¿Estás seguro de eliminar esta canción PERMANENTEMENTE del sistema? Se borrará del disco y de todas las playlists.")) {
+      return;
+    }
+
+    try {
+      await api.delete(`/api/songs/${songId}`);
+      toast.success("Canción eliminada permanentemente");
+      
+      // Update local songs state
+      setSongs((prev) => prev.filter((s) => s._id !== songId));
+      
+      // Update playlists state if necessary
+      setPlaylists((prev) => prev.map(p => ({
+        ...p,
+        songs: p.songs ? p.songs.filter(item => (item.song?._id || item._id) !== songId) : []
+      })));
+      
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Error al eliminar la canción.");
     }
   };
 
@@ -419,6 +444,27 @@ function Home() {
                             <TooltipContent>Añadir a playlist</TooltipContent>
                           </Tooltip>
                         </div>
+
+                        {/* Hover Button: Delete Song (only for owner) */}
+                        {(song.uploadedBy === user._id || (song.uploadedBy?._id || song.uploadedBy) === user._id) && (
+                          <div className="absolute top-2.5 left-2.5 z-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full bg-black/60 text-white hover:bg-destructive hover:text-destructive-foreground border-none backdrop-blur-md active:scale-90 transition-all shadow-sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteSong(song._id);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Eliminar del sistema</TooltipContent>
+                            </Tooltip>
+                          </div>
+                        )}
                       </div>
 
                       {/* Info */}
