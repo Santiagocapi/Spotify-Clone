@@ -13,12 +13,19 @@ import {
   SkipBack,
   SkipForward,
   Volume2,
+  Volume1,
+  VolumeX,
+  Volume,
   Music2,
   ListMusic,
+  Shuffle,
+  Repeat,
+  Repeat1,
+  Heart,
 } from "lucide-react";
 
 function Player() {
-  // Use the context (Added audioRef, playNext, playPrevious)
+  // Use the context (Added audioRef, playNext, playPrevious, shuffle, repeat, likedSongs, likeToggle)
   const {
     currentSong,
     isPlaying,
@@ -28,10 +35,18 @@ function Player() {
     audioRef, // We use the global audio instance from context
     showQueue,
     setShowQueue,
+    isShuffle,
+    toggleShuffle,
+    isRepeat,
+    toggleRepeat,
+    likedSongs,
+    toggleLike,
   } = usePlayer();
 
   // State to control the volume and progress
   const [volume, setVolume] = useState([50]);
+  const [isMuted, setIsMuted] = useState(false);
+  const [prevVolume, setPrevVolume] = useState([50]);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
@@ -70,6 +85,37 @@ function Player() {
     }
   };
 
+  // Handle Mute/Unmute
+  const toggleMute = () => {
+    if (isMuted) {
+      setVolume(prevVolume);
+      setIsMuted(false);
+    } else {
+      setPrevVolume(volume);
+      setVolume([0]);
+      setIsMuted(true);
+    }
+  };
+
+  // Handle Volume Change from slider
+  const handleVolumeChange = (val) => {
+    setVolume(val);
+    if (val[0] > 0) {
+      setIsMuted(false);
+    } else {
+      setIsMuted(true);
+    }
+  };
+
+  // Select dynamic volume icon
+  const getVolumeIcon = () => {
+    const vol = volume[0];
+    if (isMuted || vol === 0) return <VolumeX className="h-4.5 w-4.5 text-muted-foreground transition-colors" />;
+    if (vol < 30) return <Volume className="h-4.5 w-4.5 text-muted-foreground transition-colors" />;
+    if (vol < 70) return <Volume1 className="h-4.5 w-4.5 text-muted-foreground transition-colors" />;
+    return <Volume2 className="h-4.5 w-4.5 text-muted-foreground transition-colors" />;
+  };
+
   if (!currentSong) return null; // If no song is selected, we do not display the player.
 
   // We construct the URLs (Optional: You could move this to a helper function)
@@ -82,7 +128,7 @@ function Player() {
     <div className="absolute bottom-4 left-4 right-4 z-40 border border-border/50 bg-card/75 dark:bg-card/70 backdrop-blur-xl shadow-xl hover:shadow-2xl hover:border-border/80 transition-all duration-300 rounded-2xl select-none">
       <div className="mx-auto flex h-20 items-center justify-between px-6 md:px-8">
         {/* LEFT - SONG INFO */}
-        <div className="flex w-1/3 min-w-[180px] items-center gap-4">
+        <div className="flex w-1/3 min-w-[200px] items-center gap-4">
           {/* Cover Art */}
           <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-secondary shadow-sm ring-1 ring-border/20">
             {coverUrl ? (
@@ -116,15 +162,49 @@ function Player() {
               {currentSong.artist}
             </span>
           </div>
+
+          {/* Like Button */}
+          <button
+            onClick={() => toggleLike(currentSong)}
+            className="ml-2 text-muted-foreground hover:text-primary transition-all duration-200 hover:scale-110 active:scale-90 p-1 rounded-full hover:bg-muted/20 shrink-0"
+            title={likedSongs.some((s) => s._id === currentSong._id) ? "Quitar de tus favoritos" : "Guardar en tus favoritos"}
+          >
+            <Heart
+              className={`h-5 w-5 transition-colors ${
+                likedSongs.some((s) => s._id === currentSong._id)
+                  ? "fill-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            />
+          </button>
         </div>
 
         {/* CONTROLS CENTER */}
         <div className="flex w-1/3 min-w-[300px] flex-col items-center justify-center gap-2">
           <div className="flex items-center gap-5">
+            {/* Shuffle Button */}
+            <button
+              onClick={toggleShuffle}
+              className="text-muted-foreground hover:text-foreground transition-all hover:scale-110 active:scale-90 p-1.5 rounded-full hover:bg-muted/40 flex flex-col items-center relative"
+              title={isShuffle ? "Desactivar reproducción aleatoria" : "Activar reproducción aleatoria"}
+            >
+              <Shuffle
+                className={`h-4.5 w-4.5 transition-colors ${
+                  isShuffle 
+                    ? "text-primary fill-none font-bold" 
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              />
+              {isShuffle && (
+                <span className="absolute bottom-0.5 h-1 w-1 rounded-full bg-primary" />
+              )}
+            </button>
+
             {/* Skip Back Button */}
             <button
               onClick={playPrevious}
               className="text-muted-foreground hover:text-foreground transition-all hover:scale-110 active:scale-90 p-1.5 rounded-full hover:bg-muted/40"
+              title="Anterior"
             >
               <SkipBack className="h-4.5 w-4.5 fill-current" />
             </button>
@@ -133,6 +213,7 @@ function Player() {
             <button
               onClick={togglePlay}
               className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-md"
+              title={isPlaying ? "Pausar" : "Reproducir"}
             >
               {isPlaying ? (
                 <Pause className="h-4 w-4 fill-current" />
@@ -143,10 +224,41 @@ function Player() {
 
             {/* Skip Forward Button */}
             <button
-              onClick={playNext}
+              onClick={() => playNext(false)} // manual skip
               className="text-muted-foreground hover:text-foreground transition-all hover:scale-110 active:scale-90 p-1.5 rounded-full hover:bg-muted/40"
+              title="Siguiente"
             >
               <SkipForward className="h-4.5 w-4.5 fill-current" />
+            </button>
+
+            {/* Repeat Button */}
+            <button
+              onClick={toggleRepeat}
+              className="text-muted-foreground hover:text-foreground transition-all hover:scale-110 active:scale-90 p-1.5 rounded-full hover:bg-muted/40 flex flex-col items-center relative"
+              title={
+                isRepeat === "one" 
+                  ? "Repetir: Esta canción (Bucle 1)" 
+                  : isRepeat === "all" 
+                    ? "Repetir: Todo" 
+                    : "Repetir: Desactivado"
+              }
+            >
+              {isRepeat === "one" ? (
+                <Repeat1
+                  className="h-4.5 w-4.5 text-primary transition-colors"
+                />
+              ) : (
+                <Repeat
+                  className={`h-4.5 w-4.5 transition-colors ${
+                    isRepeat === "all"
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                />
+              )}
+              {isRepeat !== "none" && (
+                <span className="absolute bottom-0.5 h-1 w-1 rounded-full bg-primary" />
+              )}
             </button>
           </div>
 
@@ -183,13 +295,19 @@ function Player() {
           </button>
 
           <div className="flex w-full max-w-[120px] items-center gap-2">
-            <Volume2 className="h-4 w-4 text-muted-foreground" />
+            <button
+              onClick={toggleMute}
+              className="text-muted-foreground hover:text-foreground transition-all hover:scale-110 active:scale-90 p-1 rounded-full hover:bg-muted/20"
+              title={isMuted ? "Desactivar silencio" : "Silenciar"}
+            >
+              {getVolumeIcon()}
+            </button>
             <Slider
               defaultValue={[50]}
               value={volume}
               max={100}
               step={1}
-              onValueChange={(val) => setVolume(val)}
+              onValueChange={handleVolumeChange}
               className="w-full"
             />
           </div>

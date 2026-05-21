@@ -61,7 +61,8 @@ function Playlist() {
   const { user } = useAuthContext();
   const { addRecent, removeRecent } = useRecentPlaylists();
   const navigate = useNavigate();
-  const { playSong, currentSong, isPlaying, addToQueue } = usePlayer();
+  const { playSong, currentSong, isPlaying, addToQueue, likedSongs: globalLikedSongs, toggleLike } = usePlayer();
+  const likedSongs = React.useMemo(() => globalLikedSongs.map((s) => s._id), [globalLikedSongs]);
   const API_URL = import.meta.env.VITE_API_URL || "";
 
   const sensors = useSensors(
@@ -129,7 +130,6 @@ function Playlist() {
     });
   };
   const [showAddSection, setShowAddSection] = useState(false);
-  const [likedSongs, setLikedSongs] = useState([]);
 
   // Edition states
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -152,18 +152,6 @@ function Playlist() {
 
         const songsRes = await api.get("/api/songs");
         setAllSongs(songsRes.data);
-
-        try {
-          const userLikesRes = await api.get("/api/users/liked");
-          if (Array.isArray(userLikesRes.data)) {
-            const ids = userLikesRes.data.map((s) => s._id);
-            setLikedSongs(ids);
-          } else {
-            setLikedSongs([]);
-          }
-        } catch (likeError) {
-          setLikedSongs([]);
-        }
       } catch (err) {
         console.error(err);
         setError("Error al cargar la playlist");
@@ -341,22 +329,7 @@ function Playlist() {
     }
   };
 
-  // Like songs
-  const handleLike = async (songId) => {
-    try {
-      await api.put(
-        `/api/users/like/${songId}`,
-        {},
-      );
-      if (likedSongs.includes(songId)) {
-        setLikedSongs(likedSongs.filter((lid) => lid !== songId));
-      } else {
-        setLikedSongs([...likedSongs, songId]);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  // Like songs handled globally via usePlayer context
 
 if (loading)
     return (
@@ -605,7 +578,7 @@ if (loading)
                         {/* Like Button */}
                         <TableCell>
                           <button
-                            onClick={() => handleLike(song._id)}
+                            onClick={() => toggleLike(song)}
                             className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
                           >
                             <Heart
