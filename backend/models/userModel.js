@@ -9,6 +9,10 @@ const userSchema = new mongoose.Schema(
       unique: true, // Ensure usernames are unique
       trim: true, // Delete leading and trailing whitespace
     },
+    avatar: {
+      type: String,
+      default: "",
+    },
     email: {
       type: String,
       required: [true, "Por favor, ingresa un correo electrónico."],

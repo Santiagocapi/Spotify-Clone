@@ -14,6 +14,7 @@ import {
   SkipForward,
   Volume2,
   Music2,
+  ListMusic,
 } from "lucide-react";
 
 function Player() {
@@ -25,6 +26,8 @@ function Player() {
     playNext,
     playPrevious,
     audioRef, // We use the global audio instance from context
+    showQueue,
+    setShowQueue,
   } = usePlayer();
 
   // State to control the volume and progress
@@ -166,7 +169,19 @@ function Player() {
         </div>
 
         {/* RIGHT - VOLUME */}
-        <div className="flex w-1/3 justify-end">
+        <div className="flex w-1/3 items-center justify-end gap-3.5">
+          <button
+            onClick={() => setShowQueue(!showQueue)}
+            className={`transition-all hover:scale-105 active:scale-95 p-2 rounded-full hover:bg-muted/40 ${
+              showQueue 
+                ? "text-primary bg-primary/10" 
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            title="Cola de reproducción"
+          >
+            <ListMusic className="h-5 w-5" />
+          </button>
+
           <div className="flex w-full max-w-[120px] items-center gap-2">
             <Volume2 className="h-4 w-4 text-muted-foreground" />
             <Slider

@@ -94,7 +94,7 @@ function LikedSongs() {
             Las canciones que te mueven, todas en un solo lugar.
           </p>
           <div className="flex items-center gap-2 text-sm font-medium opacity-90">
-            <span className="text-primary-foreground dark:text-foreground">{user.email ? user.email.split("@")[0] : "Usuario"}</span>
+            <span className="text-primary-foreground dark:text-foreground">{user.username || (user.email ? user.email.split("@")[0] : "Usuario")}</span>
             <span className="text-primary-foreground/50 dark:text-muted-foreground/50">•</span>
             <span className="text-primary-foreground/90 dark:text-muted-foreground/90">{songs.length} canciones</span>
           </div>

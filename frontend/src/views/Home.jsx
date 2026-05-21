@@ -186,7 +186,7 @@ function Home() {
           <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="space-y-2">
               <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
-                ¡Hola, {user.email ? user.email.split("@")[0] : "Melómano"}! 
+                ¡Hola, {user.username || (user.email ? user.email.split("@")[0] : "Melómano")}! 
               </h1>
               <p className="text-muted-foreground text-sm max-w-xl font-medium">
                 Bienvenido de nuevo a OurMusic. Explora tus playlists recientes, reproduce tus canciones favoritas o sube música nueva a la biblioteca.

@@ -17,6 +17,7 @@ export const PlayerProvider = ({ children }) => {
   // State for the queue
   const [queue, setQueue] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
+  const [showQueue, setShowQueue] = useState(false);
 
   const audioRef = useRef(new Audio());
 
@@ -105,6 +106,39 @@ export const PlayerProvider = ({ children }) => {
     }
   };
 
+  const removeFromQueue = (songId) => {
+    const songIndex = queue.findIndex((s) => s._id === songId);
+    if (songIndex === -1) return;
+
+    const newQueue = queue.filter((_, idx) => idx !== songIndex);
+    setQueue(newQueue);
+
+    if (songIndex < currentIndex) {
+      setCurrentIndex(currentIndex - 1);
+    } else if (songIndex === currentIndex) {
+      if (newQueue.length === 0) {
+        setCurrentSong(null);
+        setCurrentIndex(-1);
+        setIsPlaying(false);
+      } else if (currentIndex < newQueue.length) {
+        setCurrentSong(newQueue[currentIndex]);
+      } else {
+        setCurrentIndex(newQueue.length - 1);
+        setCurrentSong(newQueue[newQueue.length - 1]);
+      }
+    }
+  };
+
+  const clearQueue = () => {
+    if (currentSong) {
+      setQueue([currentSong]);
+      setCurrentIndex(0);
+    } else {
+      setQueue([]);
+      setCurrentIndex(-1);
+    }
+  };
+
   const value = {
     currentSong,
     isPlaying,
@@ -114,6 +148,11 @@ export const PlayerProvider = ({ children }) => {
     playPrevious,
     queue,
     audioRef,
+    showQueue,
+    setShowQueue,
+    removeFromQueue,
+    clearQueue,
+    currentIndex,
   };
 
   return (

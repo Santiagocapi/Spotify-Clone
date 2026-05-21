@@ -10,6 +10,7 @@ import Player from "@/components/Player";
 import Sidebar from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import { Toaster } from "@/components/ui/sonner";
+import QueueSidebar from "@/components/QueueSidebar";
 
 function App() {
   const { user, dispatch } = useAuthContext();
@@ -45,11 +46,14 @@ function App() {
       <div className="flex-1 flex flex-col overflow-hidden relative bg-background">
         <Header />
         {/* MAIN CONTENT */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-10 pb-32 scroll-smooth">
-          <div className="mx-auto max-w-7xl animate-in fade-in duration-500">
-            <Outlet />
-          </div>
-        </main>
+        <div className="flex-1 flex overflow-hidden relative">
+          <main className="flex-1 overflow-y-auto p-6 md:p-10 pb-32 scroll-smooth">
+            <div className="mx-auto max-w-7xl animate-in fade-in duration-500">
+              <Outlet />
+            </div>
+          </main>
+          <QueueSidebar />
+        </div>
         
         {/* PLAYER */}
         <Player />
