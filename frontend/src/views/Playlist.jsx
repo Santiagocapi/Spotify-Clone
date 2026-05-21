@@ -299,6 +299,34 @@ function Playlist() {
     }
   };
 
+  // Delete song from system permanently
+  const handleDeleteSong = async (songId) => {
+    if (!window.confirm("¿Estás seguro de eliminar esta canción PERMANENTEMENTE del sistema? Se borrará del disco y de todas las playlists.")) {
+      return;
+    }
+
+    try {
+      await api.delete(`/api/songs/${songId}`);
+      toast.success("Canción eliminada permanentemente del sistema");
+      
+      // Update local playlist state (remove if it was in the current playlist)
+      setPlaylist((prev) => ({
+        ...prev,
+        songs: prev.songs.filter((item) => (item.song?._id || item._id) !== songId),
+      }));
+
+      // Update allSongs state (remove from suggested songs list)
+      setAllSongs((prev) => prev.filter((s) => s._id !== songId));
+      
+      // Refresh current playlists list just in case
+      const userPlaylistsRes = await api.get("/api/playlists/my");
+      setUserPlaylists(userPlaylistsRes.data);
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Error al eliminar la canción");
+    }
+  };
+
   // Delete playlist
   const handleDeletePlaylist = async () => {
     if (!window.confirm("¿Estás seguro de eliminar esta playlist entera?"))
@@ -615,6 +643,11 @@ if (loading)
                            <DropdownMenuItem onClick={() => handleRemoveSong(song._id)} className="text-destructive">
                              Eliminar de la playlist
                            </DropdownMenuItem>
+                           {(song.uploadedBy === user._id || (song.uploadedBy?._id || song.uploadedBy) === user._id) && (
+                             <DropdownMenuItem onClick={() => handleDeleteSong(song._id)} className="text-destructive font-semibold">
+                               Eliminar del sistema
+                             </DropdownMenuItem>
+                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -827,6 +860,20 @@ if (loading)
           >
             Eliminar de la playlist
           </button>
+          {(contextMenu.song.uploadedBy === user._id || (contextMenu.song.uploadedBy?._id || contextMenu.song.uploadedBy) === user._id) && (
+            <>
+              <Separator className="my-1 bg-border/50" />
+              <button
+                onClick={() => {
+                  handleDeleteSong(contextMenu.song._id);
+                  setContextMenu(null);
+                }}
+                className="flex w-full cursor-pointer select-none items-center rounded-lg px-2.5 py-2 text-xs font-bold text-destructive hover:bg-destructive/10 outline-none transition-colors"
+              >
+                Eliminar del sistema
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
