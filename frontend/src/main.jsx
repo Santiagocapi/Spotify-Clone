@@ -17,6 +17,7 @@ import SearchResults from "./views/SearchResults.jsx";
 // Import Context
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { PlayerProvider } from "./context/PlayerContext.jsx";
+import { ThemeProvider } from "./context/ThemeContext.jsx";
 
 // Import Guards
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -77,11 +78,13 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthProvider>
-      <PlayerProvider>
-        <TooltipProvider delayDuration={0}>
-          <RouterProvider router={router} />
-        </TooltipProvider>
-      </PlayerProvider>
+      <ThemeProvider>
+        <PlayerProvider>
+          <TooltipProvider delayDuration={0}>
+            <RouterProvider router={router} />
+          </TooltipProvider>
+        </PlayerProvider>
+      </ThemeProvider>
     </AuthProvider>
   </React.StrictMode>
 );

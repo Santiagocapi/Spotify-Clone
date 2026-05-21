@@ -76,12 +76,12 @@ function Player() {
     : null;
 
   return (
-    <div className="z-50 border-t border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 md:px-8">
+    <div className="absolute bottom-4 left-4 right-4 z-40 border border-border/50 bg-card/75 dark:bg-card/70 backdrop-blur-xl shadow-xl hover:shadow-2xl hover:border-border/80 transition-all duration-300 rounded-2xl select-none">
+      <div className="mx-auto flex h-20 items-center justify-between px-6 md:px-8">
         {/* LEFT - SONG INFO */}
         <div className="flex w-1/3 min-w-[180px] items-center gap-4">
           {/* Cover Art */}
-          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-secondary shadow-sm">
+          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-secondary shadow-sm ring-1 ring-border/20">
             {coverUrl ? (
               <img
                 src={coverUrl}
@@ -96,10 +96,20 @@ function Player() {
           </div>
 
           <div className="flex flex-col overflow-hidden">
-            <span className="truncate text-sm font-semibold text-foreground">
-              {currentSong.title}
-            </span>
-            <span className="truncate text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span className="truncate text-sm font-semibold text-foreground">
+                {currentSong.title}
+              </span>
+              {isPlaying && (
+                <div className="flex items-end gap-[2px] h-3.5 shrink-0 px-1">
+                  <span className="soundwave-bar animate-wave-1 h-3" />
+                  <span className="soundwave-bar animate-wave-2 h-4" />
+                  <span className="soundwave-bar animate-wave-3 h-2" />
+                  <span className="soundwave-bar animate-wave-4 h-3.5" />
+                </div>
+              )}
+            </div>
+            <span className="truncate text-xs text-muted-foreground font-medium">
               {currentSong.artist}
             </span>
           </div>
@@ -107,39 +117,39 @@ function Player() {
 
         {/* CONTROLS CENTER */}
         <div className="flex w-1/3 min-w-[300px] flex-col items-center justify-center gap-2">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-5">
             {/* Skip Back Button */}
             <button
               onClick={playPrevious}
-              className="text-muted-foreground hover:text-foreground transition-colors hover:scale-110"
+              className="text-muted-foreground hover:text-foreground transition-all hover:scale-110 active:scale-90 p-1.5 rounded-full hover:bg-muted/40"
             >
-              <SkipBack className="h-5 w-5" />
+              <SkipBack className="h-4.5 w-4.5 fill-current" />
             </button>
 
             {/* Play/Pause Button */}
             <button
               onClick={togglePlay}
-              className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:scale-105 transition-transform shadow-md"
+              className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-md"
             >
               {isPlaying ? (
-                <Pause className="h-5 w-5 fill-current" />
+                <Pause className="h-4 w-4 fill-current" />
               ) : (
-                <Play className="h-5 w-5 fill-current ml-1" />
+                <Play className="h-4 w-4 fill-current ml-0.5" />
               )}
             </button>
 
             {/* Skip Forward Button */}
             <button
               onClick={playNext}
-              className="text-muted-foreground hover:text-foreground transition-colors hover:scale-110"
+              className="text-muted-foreground hover:text-foreground transition-all hover:scale-110 active:scale-90 p-1.5 rounded-full hover:bg-muted/40"
             >
-              <SkipForward className="h-5 w-5" />
+              <SkipForward className="h-4.5 w-4.5 fill-current" />
             </button>
           </div>
 
           {/* PROGRESS BAR */}
-          <div className="flex w-full items-center gap-2 text-xs text-muted-foreground">
-            <span className="w-10 text-right font-mono">
+          <div className="flex w-full items-center gap-3 text-[10px] font-semibold text-muted-foreground/80">
+            <span className="w-8 text-right font-mono">
               {formatTime(currentTime)}
             </span>
 
@@ -148,24 +158,24 @@ function Player() {
               max={duration || 100}
               step={1}
               onValueChange={handleSeek}
-              className="w-full cursor-pointer"
+              className="w-full"
             />
 
-            <span className="w-10 font-mono">{formatTime(duration)}</span>
+            <span className="w-8 font-mono">{formatTime(duration)}</span>
           </div>
         </div>
 
         {/* RIGHT - VOLUME */}
         <div className="flex w-1/3 justify-end">
           <div className="flex w-full max-w-[120px] items-center gap-2">
-            <Volume2 className="h-5 w-5 text-muted-foreground" />
+            <Volume2 className="h-4 w-4 text-muted-foreground" />
             <Slider
               defaultValue={[50]}
               value={volume}
               max={100}
               step={1}
               onValueChange={(val) => setVolume(val)}
-              className="cursor-pointer"
+              className="w-full"
             />
           </div>
         </div>
