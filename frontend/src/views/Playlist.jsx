@@ -61,7 +61,7 @@ function Playlist() {
   const { user } = useAuthContext();
   const { addRecent, removeRecent } = useRecentPlaylists();
   const navigate = useNavigate();
-  const { playSong, currentSong, isPlaying } = usePlayer();
+  const { playSong, currentSong, isPlaying, addToQueue } = usePlayer();
   const API_URL = import.meta.env.VITE_API_URL || "";
 
   const sensors = useSensors(
@@ -103,7 +103,31 @@ function Playlist() {
   const [loading, setLoading] = useState(true);
   const [isAddToPlaylistOpen, setIsAddToPlaylistOpen] = useState(false);
   const [songToAddToOther, setSongToAddToOther] = useState(null);
+  const [contextMenu, setContextMenu] = useState(null);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const handleCloseMenu = () => setContextMenu(null);
+    window.addEventListener("click", handleCloseMenu);
+    return () => window.removeEventListener("click", handleCloseMenu);
+  }, []);
+
+  const handleContextMenu = (e, song) => {
+    e.preventDefault();
+    const x = e.clientX;
+    const y = e.clientY;
+
+    const menuWidth = 180;
+    const menuHeight = 120;
+    const clickX = x + menuWidth > window.innerWidth ? x - menuWidth : x;
+    const clickY = y + menuHeight > window.innerHeight ? y - menuHeight : y;
+
+    setContextMenu({
+      x: clickX,
+      y: clickY,
+      song,
+    });
+  };
   const [showAddSection, setShowAddSection] = useState(false);
   const [likedSongs, setLikedSongs] = useState([]);
 
@@ -474,7 +498,7 @@ if (loading)
                     const isCurrentSong = currentSong?._id === song._id;
 
                     return (
-                      <SortableSongRow key={song._id} song={song}>
+                      <SortableSongRow key={song._id} song={song} onContextMenu={(e) => handleContextMenu(e, song)}>
                         <TableCell className="font-medium text-muted-foreground text-center relative w-[50px] min-w-[50px]">
                           <span
                             className={cn(
@@ -579,6 +603,9 @@ if (loading)
                            </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                           <DropdownMenuItem onClick={() => addToQueue(song)}>
+                             Añadir a la cola
+                           </DropdownMenuItem>
                            <DropdownMenuItem onClick={() => {
                                setSongToAddToOther(song);
                                setIsAddToPlaylistOpen(true);
@@ -763,6 +790,45 @@ if (loading)
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* CONTEXT MENU */}
+      {contextMenu && (
+        <div
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          className="fixed z-50 min-w-[180px] overflow-hidden rounded-xl border border-border/80 bg-card/95 backdrop-blur-md p-1.5 text-card-foreground shadow-xl animate-in fade-in-50 zoom-in-95 select-none"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => {
+              addToQueue(contextMenu.song);
+              setContextMenu(null);
+            }}
+            className="flex w-full cursor-pointer select-none items-center rounded-lg px-2.5 py-2 text-xs font-semibold text-foreground hover:bg-muted/80 outline-none transition-colors"
+          >
+            Añadir a la cola
+          </button>
+          <button
+            onClick={() => {
+              setSongToAddToOther(contextMenu.song);
+              setIsAddToPlaylistOpen(true);
+              setContextMenu(null);
+            }}
+            className="flex w-full cursor-pointer select-none items-center rounded-lg px-2.5 py-2 text-xs font-semibold text-foreground hover:bg-muted/80 outline-none transition-colors"
+          >
+            Añadir a otra playlist
+          </button>
+          <Separator className="my-1 bg-border/50" />
+          <button
+            onClick={() => {
+              handleRemoveSong(contextMenu.song._id);
+              setContextMenu(null);
+            }}
+            className="flex w-full cursor-pointer select-none items-center rounded-lg px-2.5 py-2 text-xs font-semibold text-destructive hover:bg-destructive/10 outline-none transition-colors"
+          >
+            Eliminar de la playlist
+          </button>
+        </div>
+      )}
     </div>
   );
 }

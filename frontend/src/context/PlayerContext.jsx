@@ -5,6 +5,7 @@ import React, {
   useRef,
   useEffect,
 } from "react";
+import { toast } from "sonner";
 
 const PlayerContext = createContext();
 
@@ -15,7 +16,8 @@ export const PlayerProvider = ({ children }) => {
   const [currentSong, setCurrentSong] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   // State for the queue
-  const [queue, setQueue] = useState([]);
+  const [userQueue, setUserQueue] = useState([]);
+  const [playlistQueue, setPlaylistQueue] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [showQueue, setShowQueue] = useState(false);
 
@@ -51,7 +53,7 @@ export const PlayerProvider = ({ children }) => {
     };
     audio.addEventListener("ended", handleEnded);
     return () => audio.removeEventListener("ended", handleEnded);
-  }, [currentIndex, queue]); // Dependencies to ensure playNext has fresh values
+  }, [currentIndex, userQueue, playlistQueue]); // Dependencies to ensure playNext has fresh values
 
   // Recived a song and a new queue
   const playSong = (song, newQueue = []) => {
@@ -65,13 +67,17 @@ export const PlayerProvider = ({ children }) => {
 
     // If we receive a new queue (e.g: click on playlist), we use it as the queue
     if (newQueue.length > 0) {
-      setQueue(newQueue);
+      setPlaylistQueue(newQueue);
       const index = newQueue.findIndex((s) => s._id === song._id);
       setCurrentIndex(index);
-    } else if (queue.length === 0) {
-      // If no queue and it's a standalone song, the queue is just that song
-      setQueue([song]);
-      setCurrentIndex(0);
+    } else {
+      const index = playlistQueue.findIndex((s) => s._id === song._id);
+      if (index !== -1) {
+        setCurrentIndex(index);
+      } else {
+        setPlaylistQueue([song]);
+        setCurrentIndex(0);
+      }
     }
   };
 
@@ -81,10 +87,15 @@ export const PlayerProvider = ({ children }) => {
 
   // Function to play the next song
   const playNext = () => {
-    if (currentIndex < queue.length - 1) {
+    if (userQueue.length > 0) {
+      const nextSong = userQueue[0];
+      setUserQueue(userQueue.slice(1));
+      setCurrentSong(nextSong);
+      setIsPlaying(true);
+    } else if (currentIndex < playlistQueue.length - 1) {
       const nextIndex = currentIndex + 1;
       setCurrentIndex(nextIndex);
-      setCurrentSong(queue[nextIndex]);
+      setCurrentSong(playlistQueue[nextIndex]);
       setIsPlaying(true);
     } else {
       // End of the playlist: pause or we could go back to the start
@@ -101,42 +112,24 @@ export const PlayerProvider = ({ children }) => {
       // If we're at the beginning, go to the previous song
       const prevIndex = currentIndex - 1;
       setCurrentIndex(prevIndex);
-      setCurrentSong(queue[prevIndex]);
+      setCurrentSong(playlistQueue[prevIndex]);
       setIsPlaying(true);
     }
   };
 
   const removeFromQueue = (songId) => {
-    const songIndex = queue.findIndex((s) => s._id === songId);
-    if (songIndex === -1) return;
-
-    const newQueue = queue.filter((_, idx) => idx !== songIndex);
-    setQueue(newQueue);
-
-    if (songIndex < currentIndex) {
-      setCurrentIndex(currentIndex - 1);
-    } else if (songIndex === currentIndex) {
-      if (newQueue.length === 0) {
-        setCurrentSong(null);
-        setCurrentIndex(-1);
-        setIsPlaying(false);
-      } else if (currentIndex < newQueue.length) {
-        setCurrentSong(newQueue[currentIndex]);
-      } else {
-        setCurrentIndex(newQueue.length - 1);
-        setCurrentSong(newQueue[newQueue.length - 1]);
-      }
-    }
+    setUserQueue((prevQueue) => prevQueue.filter((s) => s._id !== songId));
+    toast.success("Canción eliminada de la cola");
   };
 
   const clearQueue = () => {
-    if (currentSong) {
-      setQueue([currentSong]);
-      setCurrentIndex(0);
-    } else {
-      setQueue([]);
-      setCurrentIndex(-1);
-    }
+    setUserQueue([]);
+    toast.success("Cola de reproducción vaciada");
+  };
+
+  const addToQueue = (song) => {
+    setUserQueue((prevQueue) => [...prevQueue, song]);
+    toast.success(`"${song.title}" añadida a la cola.`);
   };
 
   const value = {
@@ -146,13 +139,17 @@ export const PlayerProvider = ({ children }) => {
     togglePlay,
     playNext,
     playPrevious,
-    queue,
+    userQueue,
+    setUserQueue,
+    playlistQueue,
+    setPlaylistQueue,
     audioRef,
     showQueue,
     setShowQueue,
     removeFromQueue,
     clearQueue,
     currentIndex,
+    addToQueue,
   };
 
   return (

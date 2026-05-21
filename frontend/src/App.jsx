@@ -52,12 +52,14 @@ function App() {
               <Outlet />
             </div>
           </main>
-          <QueueSidebar />
         </div>
         
         {/* PLAYER */}
         <Player />
       </div>
+
+      {/* QUEUE SIDEBAR */}
+      <QueueSidebar />
 
       {/* Toast for notifications */}
       <Toaster />

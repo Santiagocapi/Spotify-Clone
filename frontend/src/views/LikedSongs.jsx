@@ -18,31 +18,107 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { toast } from "sonner";
+import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
 // Icons Lucid React
-import { Heart, Clock3, Music, PlayCircle, PauseCircle, Play, Pause } from "lucide-react";
+import { Heart, Clock3, Music, PlayCircle, PauseCircle, Play, Pause, MoreVertical, Check, Circle, X } from "lucide-react";
 
 function LikedSongs() {
   const { user } = useAuthContext();
-  const { playSong, currentSong, isPlaying } = usePlayer();
+  const { playSong, currentSong, isPlaying, addToQueue } = usePlayer();
   const API_URL = import.meta.env.VITE_API_URL || "";
 
   const [songs, setSongs] = useState([]);
+  const [userPlaylists, setUserPlaylists] = useState([]);
+  const [isAddToPlaylistOpen, setIsAddToPlaylistOpen] = useState(false);
+  const [songToAddToOther, setSongToAddToOther] = useState(null);
+  const [contextMenu, setContextMenu] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load liked songs
+  // Load liked songs and user playlists
   useEffect(() => {
-    const fetchLiked = async () => {
+    const fetchLikedAndPlaylists = async () => {
       try {
         const res = await api.get("/api/users/liked");
         setSongs(res.data); // The endpoint returns the array of songs directly
+
+        const playlistsRes = await api.get("/api/playlists/my");
+        setUserPlaylists(playlistsRes.data);
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    if (user) fetchLiked();
+    if (user) fetchLikedAndPlaylists();
   }, [user]);
+
+  useEffect(() => {
+    const handleCloseMenu = () => setContextMenu(null);
+    window.addEventListener("click", handleCloseMenu);
+    return () => window.removeEventListener("click", handleCloseMenu);
+  }, []);
+
+  const handleContextMenu = (e, song) => {
+    e.preventDefault();
+    const x = e.clientX;
+    const y = e.clientY;
+
+    const menuWidth = 180;
+    const menuHeight = 120;
+    const clickX = x + menuWidth > window.innerWidth ? x - menuWidth : x;
+    const clickY = y + menuHeight > window.innerHeight ? y - menuHeight : y;
+
+    setContextMenu({
+      x: clickX,
+      y: clickY,
+      song,
+    });
+  };
+
+  // Function to Add/Remove from Another Playlist
+  const handleToggleSong = async (playlistId, songId, isAlreadyAdded) => {
+    const originalPlaylists = JSON.parse(JSON.stringify(userPlaylists));
+
+    // Optimistic update for other playlists list
+    setUserPlaylists(prev => prev.map(p => {
+        if (p._id === playlistId) {
+            if (isAlreadyAdded) {
+                return { ...p, songs: p.songs.filter(s => (s.song?._id || s._id) !== songId) };
+            } else {
+                return { ...p, songs: [...p.songs, { song: songToAddToOther }] };
+            }
+        }
+        return p;
+    }));
+
+    try {
+      if (isAlreadyAdded) {
+        await api.put(`/api/playlists/${playlistId}/remove`, { songId });
+        toast.success("Canción eliminada de la playlist");
+      } else {
+        await api.put(`/api/playlists/${playlistId}/add`, { songId });
+        toast.success("Canción añadida exitosamente");
+      }
+    } catch (err) {
+      console.error(err);
+      setUserPlaylists(originalPlaylists);
+      toast.error(err.response?.data?.message || "Error al actualizar la playlist");
+    }
+  };
 
   // Function to remove like (remove from this list)
   const handleRemoveLike = async (songId) => {
@@ -50,6 +126,7 @@ function LikedSongs() {
       await api.put(`/api/users/like/${songId}`, {});
       // Update the list visually removing the song
       setSongs(songs.filter((s) => s._id !== songId));
+      toast.success("Eliminada de tus Me Gusta");
     } catch (err) {
       console.error(err);
     }
@@ -128,6 +205,7 @@ function LikedSongs() {
               <TableHead className="hidden sm:table-cell text-right">
                 <Clock3 className="h-4 w-4 ml-auto" />
               </TableHead>
+              <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -136,7 +214,7 @@ function LikedSongs() {
               const isCurrentSong = currentSong?._id === song._id;
 
               return (
-                <TableRow key={song._id} className="group h-16">
+                <TableRow key={song._id} onContextMenu={(e) => handleContextMenu(e, song)} className="group h-16 cursor-pointer">
                   {/* Número / Play Button */}
                   <TableCell className="text-center relative font-medium text-muted-foreground w-[50px] min-w-[50px]">
                     <span
@@ -222,6 +300,31 @@ function LikedSongs() {
                   <TableCell className="hidden sm:table-cell text-right text-muted-foreground font-mono text-xs">
                     {formatTime(song.duration)}
                   </TableCell>
+
+                  {/* Action Menu (Three Dots) */}
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                         <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary">
+                           <MoreVertical className="h-4 w-4" />
+                         </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                         <DropdownMenuItem onClick={() => addToQueue(song)}>
+                           Añadir a la cola
+                         </DropdownMenuItem>
+                         <DropdownMenuItem onClick={() => {
+                             setSongToAddToOther(song);
+                             setIsAddToPlaylistOpen(true);
+                         }}>
+                           Añadir a otra playlist
+                         </DropdownMenuItem>
+                         <DropdownMenuItem onClick={() => handleRemoveLike(song._id)} className="text-destructive">
+                           Quitar de tus Me Gusta
+                         </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               );
             })}
@@ -233,6 +336,88 @@ function LikedSongs() {
           </div>
         )}
       </div>
+
+      {/* ADD TO OTHER PLAYLIST MODAL */}
+      <Dialog open={isAddToPlaylistOpen} onOpenChange={setIsAddToPlaylistOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Añadir a otra playlist</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-2 py-4">
+            {userPlaylists.map((p) => {
+              const isAlreadyAdded = p.songs.some(
+                (s) => (s.song?._id || s._id) === songToAddToOther?._id
+              );
+              return (
+                <Button
+                  key={p._id}
+                  variant="ghost"
+                  className="justify-start gap-3 h-14 w-full"
+                  onClick={() => handleToggleSong(p._id, songToAddToOther?._id, isAlreadyAdded)}
+                >
+                  <div className="h-10 w-10 bg-muted rounded overflow-hidden">
+                    {p.coverImagePath ? (
+                      <img
+                        src={`${API_URL}/${p.coverImagePath.replace(/\\/g, "/")}`}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <Music className="h-5 w-5 text-muted-foreground m-auto" />
+                    )}
+                  </div>
+                  <div className="flex-1 text-left flex justify-between items-center">
+                    {p.name}
+                    {isAlreadyAdded ? (
+                      <Check className="h-5 w-5 text-primary" />
+                    ) : (
+                      <Circle className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </div>
+                </Button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* CONTEXT MENU */}
+      {contextMenu && (
+        <div
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          className="fixed z-50 min-w-[180px] overflow-hidden rounded-xl border border-border/80 bg-card/95 backdrop-blur-md p-1.5 text-card-foreground shadow-xl animate-in fade-in-50 zoom-in-95 select-none"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => {
+              addToQueue(contextMenu.song);
+              setContextMenu(null);
+            }}
+            className="flex w-full cursor-pointer select-none items-center rounded-lg px-2.5 py-2 text-xs font-semibold text-foreground hover:bg-muted/80 outline-none transition-colors"
+          >
+            Añadir a la cola
+          </button>
+          <button
+            onClick={() => {
+              setSongToAddToOther(contextMenu.song);
+              setIsAddToPlaylistOpen(true);
+              setContextMenu(null);
+            }}
+            className="flex w-full cursor-pointer select-none items-center rounded-lg px-2.5 py-2 text-xs font-semibold text-foreground hover:bg-muted/80 outline-none transition-colors"
+          >
+            Añadir a otra playlist
+          </button>
+          <Separator className="my-1 bg-border/50" />
+          <button
+            onClick={() => {
+              handleRemoveLike(contextMenu.song._id);
+              setContextMenu(null);
+            }}
+            className="flex w-full cursor-pointer select-none items-center rounded-lg px-2.5 py-2 text-xs font-semibold text-destructive hover:bg-destructive/10 outline-none transition-colors"
+          >
+            Quitar de tus Me Gusta
+          </button>
+        </div>
+      )}
     </div>
   );
 }
