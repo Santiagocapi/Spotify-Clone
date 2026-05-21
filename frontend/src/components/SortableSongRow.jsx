@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { TableRow } from "@/components/ui/table";
 
-export function SortableSongRow({ song, children }) {
+export function SortableSongRow({ song, children, onContextMenu }) {
   const {
     attributes,
     listeners,
@@ -18,7 +18,7 @@ export function SortableSongRow({ song, children }) {
   };
 
   return (
-    <TableRow ref={setNodeRef} style={style} {...attributes} {...listeners} className="cursor-grab group h-16">
+    <TableRow ref={setNodeRef} style={style} {...attributes} {...listeners} onContextMenu={onContextMenu} className="cursor-grab group h-16">
       {children}
     </TableRow>
   );

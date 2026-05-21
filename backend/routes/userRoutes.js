@@ -9,6 +9,7 @@ const {
   registerUser,
   loginUser,
   getUserProfile,
+  updateUserProfile,
   toggleLikeSong,
   getLikedSongs,
 } = require("../controllers/userController");
@@ -18,6 +19,8 @@ router.post("/register", registerUser); // Define the route for user registratio
 router.post("/login", loginUser); // Define the route for user login (ENDPOINT)
 
 router.get("/profile", protect, getUserProfile); // Define the route for getting user profile (ENDPOINT)
+
+router.put("/profile", protect, updateUserProfile); // Define the route for updating user profile (ENDPOINT)
 
 router.put("/like/:id", protect, toggleLikeSong); // Toggles like on a song
 

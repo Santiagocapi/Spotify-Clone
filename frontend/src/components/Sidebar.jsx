@@ -64,6 +64,7 @@ function Sidebar() {
   // Navigation list
   const navItems = [
     { icon: Home, label: "Inicio", path: "/" },
+    { icon: Heart, label: "Me Gusta", path: "/collection/tracks" },
   ];
 
   // Auxiliary component to render buttons with Tooltip
@@ -83,9 +84,11 @@ function Sidebar() {
         variant={variant}
         onClick={onClick}
         className={cn(
-          "w-full justify-start gap-4 mb-1",
+          "w-full justify-start gap-4 mb-1.5 transition-all duration-200 rounded-lg active:scale-[0.98]",
           isCollapsed ? "justify-center px-2" : "px-4",
-          isActive && "bg-accent text-accent-foreground",
+          isActive 
+            ? "bg-primary text-primary-foreground shadow-md shadow-primary/10 font-semibold" 
+            : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
           className,
         )}
       >
@@ -94,13 +97,13 @@ function Sidebar() {
           <img
             src={image}
             alt={label}
-            className="h-5 w-5 rounded-sm object-cover shrink-0"
+            className="h-8 w-8 rounded-md object-cover shrink-0 shadow-sm"
           />
         ) : (
-          <Icon size={20} className="shrink-0" />
+          <Icon size={20} className={cn("shrink-0", label === "Me Gusta" && isActive && "fill-current text-destructive-foreground")} />
         )}
 
-        {!isCollapsed && <span className="truncate">{label}</span>}
+        {!isCollapsed && <span className="truncate text-sm tracking-wide">{label}</span>}
       </Button>
     );
 
@@ -113,7 +116,7 @@ function Sidebar() {
               {content}
             </Link>
           </TooltipTrigger>
-          <TooltipContent side="right" className="font-medium">
+          <TooltipContent side="right" className="font-semibold text-xs">
             {label}
           </TooltipContent>
         </Tooltip>
@@ -131,21 +134,21 @@ function Sidebar() {
     <TooltipProvider>
       <aside
         className={cn(
-          "relative flex flex-col h-full border-r border-border bg-card transition-all duration-300",
-          isCollapsed ? "w-[80px]" : "w-[280px]",
+          "relative flex flex-col h-full border-r border-border/80 bg-card transition-all duration-300 z-30 select-none",
+          isCollapsed ? "w-[76px]" : "w-[260px]",
         )}
       >
         {/* LOGO AND BUTTON TOGGLE */}
         <div
           className={cn(
-            "flex items-center p-6",
+            "flex items-center h-16 px-6 border-b border-border/40",
             isCollapsed ? "justify-center px-2" : "justify-between",
           )}
         >
-          <Link to="/" className="flex items-center gap-2 overflow-hidden">
+          <Link to="/" className="flex items-center gap-2.5 overflow-hidden active:scale-95 transition-transform">
             <OurMusicLogo />
             {!isCollapsed && (
-              <span className="text-xl font-bold tracking-tight text-primary transition-opacity duration-300">
+              <span className="text-lg font-bold tracking-tight text-primary transition-opacity duration-300">
                 OurMusic
               </span>
             )}
@@ -157,39 +160,40 @@ function Sidebar() {
               variant="ghost"
               size="icon"
               onClick={() => setIsCollapsed(true)}
-              className="h-8 w-8 ml-auto text-muted-foreground"
+              className="h-8 w-8 ml-auto text-muted-foreground hover:bg-muted rounded-full active:scale-90 transition-all"
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={16} />
             </Button>
           )}
         </div>
 
-        {/*Button to expand (If it's collapsed, we'll center it at the top) */}
+        {/* Button to expand (If it's collapsed, we'll center it at the top) */}
         {isCollapsed && (
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center my-3">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsCollapsed(false)}
+              className="h-8 w-8 text-muted-foreground hover:bg-muted rounded-full active:scale-90 transition-all"
             >
-              <ChevronRight size={18} />
+              <ChevronRight size={16} />
             </Button>
           </div>
         )}
 
         {/* Navigation */}
         <ScrollArea className="flex-1 px-3">
-          <div className="space-y-1 py-2">
+          <div className="space-y-1 py-3">
             {navItems.map((item) => (
               <NavButton key={item.label} {...item} />
             ))}
           </div>
 
-          <Separator className="my-4 opacity-50" />
+          <Separator className="my-2 bg-border/50" />
 
           <div className="mt-4">
             {!isCollapsed && (
-              <h3 className="mb-2 px-4 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+              <h3 className="mb-3 px-4 text-[10px] font-bold uppercase text-muted-foreground tracking-widest opacity-80">
                 Recientes
               </h3>
             )}

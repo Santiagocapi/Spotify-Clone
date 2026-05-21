@@ -41,6 +41,7 @@ const registerUser = async (req, res) => {
         _id: user._id,
         username: user.username,
         email: user.email,
+        avatar: user.avatar || "",
         // Token generation can be added here for authentication
       });
     } else {
@@ -66,6 +67,7 @@ const loginUser = async (req, res) => {
         _id: user._id,
         username: user.username,
         email: user.email,
+        avatar: user.avatar || "",
         token: generateToken(user._id), // Generate a token for the user
       });
     } else {
@@ -86,6 +88,7 @@ const getUserProfile = async (req, res) => {
       _id: req.user._id,
       username: req.user.username,
       email: req.user.email,
+      avatar: req.user.avatar || "",
     });
   } else {
     res.status(404).json({ message: "Usuario no encontrado." });
@@ -135,11 +138,61 @@ const getLikedSongs = async (req, res) => {
   }
 };
 
+const updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+      if (req.body.username) {
+        const usernameExists = await User.findOne({ username: req.body.username });
+        if (usernameExists && usernameExists._id.toString() !== user._id.toString()) {
+          res.status(400).json({ message: "El nombre de usuario ya está en uso." });
+          return;
+        }
+        user.username = req.body.username;
+      }
+      
+      if (req.body.avatar !== undefined) {
+        user.avatar = req.body.avatar;
+      }
+
+      if (req.body.password) {
+        if (!req.body.currentPassword) {
+          res.status(400).json({ message: "Se requiere la contraseña actual para establecer una nueva." });
+          return;
+        }
+        const isMatch = await bcrypt.compare(req.body.currentPassword, user.password);
+        if (!isMatch) {
+          res.status(400).json({ message: "La contraseña actual es incorrecta." });
+          return;
+        }
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(req.body.password, salt);
+      }
+
+      const updatedUser = await user.save();
+
+      res.status(200).json({
+        _id: updatedUser._id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        avatar: updatedUser.avatar || "",
+        token: generateToken(updatedUser._id),
+      });
+    } else {
+      res.status(404).json({ message: "Usuario no encontrado." });
+    }
+  } catch (error) {
+    res.status(500).json({ message: `Error al actualizar perfil: ${error.message}` });
+  }
+};
+
 // Export the controller functions
 module.exports = {
   registerUser,
   loginUser,
   getUserProfile,
+  updateUserProfile,
   toggleLikeSong,
   getLikedSongs,
 };
